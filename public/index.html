@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>T8M Energia Solar | Painel Meta Ads</title>
+    <link rel="icon" href="/assets/favicon.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="login-view" id="loginView" aria-labelledby="loginTitle">
+        <div class="login-panel">
+          <div class="brand-block">
+            <img class="brand-logo" src="/assets/t8m-logo.png" alt="T8M Energia" />
+            <div>
+              <p class="eyebrow">Area do cliente</p>
+              <h1 id="loginTitle">T8M Energia Solar</h1>
+            </div>
+          </div>
+          <p class="login-copy">
+            Painel privado para acompanhar saldo e campanhas ativas na conta de
+            anuncios da T8M.
+          </p>
+
+          <form class="login-form" id="loginForm">
+            <label>
+              <span>Usuario</span>
+              <input
+                autocomplete="username"
+                id="username"
+                name="username"
+                required
+                type="text"
+              />
+            </label>
+            <label>
+              <span>Senha</span>
+              <input
+                autocomplete="current-password"
+                id="password"
+                name="password"
+                required
+                type="password"
+              />
+            </label>
+            <button class="primary-button" type="submit">Entrar</button>
+            <p class="form-message" id="loginMessage" role="alert"></p>
+          </form>
+        </div>
+      </section>
+
+      <section class="dashboard-view hidden" id="dashboardView" aria-label="Painel">
+        <header class="hero">
+          <div class="hero-row">
+            <div class="brand-block compact">
+              <img class="brand-logo" src="/assets/t8m-logo.png" alt="T8M Energia" />
+              <div>
+                <p class="eyebrow" id="sourceLabel">Meta Ads</p>
+                <h1 id="accountName">T8M Energia Solar</h1>
+              </div>
+            </div>
+            <div class="topbar-actions">
+              <button class="ghost-button" id="refreshButton" type="button">
+                Atualizar
+              </button>
+              <button class="quiet-button" id="logoutButton" type="button">Sair</button>
+            </div>
+          </div>
+          <p class="lead">
+            Visao rapida da conta de anuncios: saldo, gasto de hoje e campanhas
+            em veiculacao.
+          </p>
+          <div class="meta-line">
+            <span id="accountStatus">Conta ativa</span>
+            <span id="lastUpdated">Atualizado agora</span>
+            <span id="timezoneValue">America/Sao_Paulo</span>
+          </div>
+        </header>
+
+        <section class="control-grid" aria-label="Controles do painel">
+          <article class="control-panel">
+            <div class="control-head">
+              <span class="sec-n">01</span>
+              <div>
+                <p class="eyebrow">Periodo</p>
+                <h2 id="periodLabel">Hoje</h2>
+              </div>
+            </div>
+            <div class="period-controls">
+              <label>
+                <span>Historico</span>
+                <select id="periodSelect">
+                  <option value="today">Hoje</option>
+                  <option value="yesterday">Ontem</option>
+                  <option value="last_7d">Ultimos 7 dias</option>
+                  <option value="last_30d">Ultimos 30 dias</option>
+                  <option value="this_month">Este mes</option>
+                  <option value="last_month">Mes passado</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+              </label>
+              <div class="custom-range hidden" id="customRange">
+                <label>
+                  <span>Inicio</span>
+                  <input id="sinceDate" type="date" />
+                </label>
+                <label>
+                  <span>Fim</span>
+                  <input id="untilDate" type="date" />
+                </label>
+              </div>
+              <button class="ghost-button" id="applyPeriodButton" type="button">
+                Aplicar
+              </button>
+            </div>
+          </article>
+
+          <article class="control-panel">
+            <div class="control-head">
+              <span class="sec-n">02</span>
+              <div>
+                <p class="eyebrow">Conector</p>
+                <h2>Meta Ads</h2>
+              </div>
+            </div>
+            <div class="connector-box">
+              <div>
+                <span class="connector-status" id="connectorStatus">Verificando</span>
+                <p id="connectorHint">Conexao da conta de anuncios.</p>
+              </div>
+              <button class="primary-button" id="connectMetaButton" type="button">
+                Conectar Meta
+              </button>
+              <button class="quiet-button hidden" id="disconnectMetaButton" type="button">
+                Desconectar
+              </button>
+            </div>
+            <label class="account-picker hidden" id="accountPicker">
+              <span>Conta de anuncios</span>
+              <select id="adAccountSelect"></select>
+            </label>
+          </article>
+        </section>
+
+        <section class="metric-grid" aria-label="Resumo da conta">
+          <article class="metric-card balance-card">
+            <p>Saldo da conta</p>
+            <strong id="balanceValue">--</strong>
+            <span id="balanceHint">Saldo informado pela Meta</span>
+          </article>
+          <article class="metric-card">
+            <p>Limite restante</p>
+            <strong id="remainingCapValue">--</strong>
+            <span id="spendCapValue">Limite total: --</span>
+          </article>
+          <article class="metric-card">
+            <p>Investimento</p>
+            <strong id="todaySpendValue">--</strong>
+            <span id="todayImpressionsValue">-- impressoes</span>
+          </article>
+          <article class="metric-card">
+            <p>Campanhas</p>
+            <strong id="activeCampaignsValue">--</strong>
+            <span id="todayResultsValue">-- resultados hoje</span>
+          </article>
+        </section>
+
+        <section class="content-band">
+          <div class="section-heading">
+            <div class="section-title">
+              <span class="sec-n">03</span>
+              <div>
+                <p class="eyebrow" id="campaignPeriodEyebrow">Hoje</p>
+                <h2>Campanhas em veiculacao</h2>
+              </div>
+            </div>
+            <span class="pill">Conta de anuncios T8M</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Campanha</th>
+                  <th>Objetivo</th>
+                  <th>Resultado</th>
+                  <th>Invest.</th>
+                  <th>CPR</th>
+                  <th>Alcance</th>
+                  <th>Impressoes</th>
+                  <th>CTR</th>
+                </tr>
+              </thead>
+              <tbody id="campaignRows"></tbody>
+            </table>
+          </div>
+
+          <div class="mobile-campaigns" id="mobileCampaigns"></div>
+          <div class="empty-state hidden" id="emptyState">
+            Nenhuma campanha ativa encontrada hoje.
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

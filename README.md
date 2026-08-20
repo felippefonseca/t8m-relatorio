@@ -1,34 +1,93 @@
-# Relatórios de Performance — T8M Energia Solar
+# Painel Meta Ads | T8M Energia Solar
 
-Site estático com os relatórios de tráfego pago (Meta Ads) e orgânico (Instagram) da T8M.
-Sem build e sem dependências — abre direto no navegador e publica na Vercel como está.
+Painel privado para a T8M acompanhar saldo da conta de anuncios, campanhas ativas e historico de performance no Meta Ads.
 
-## Períodos disponíveis
-O seletor **"Período ▾"** no topo de cada página troca entre os relatórios. Cada período fica
-salvo/congelado em seu próprio arquivo, para o cliente conferir resultados antigos a qualquer momento.
+Ele usa a identidade dos relatorios antigos: fundo escuro, laranja T8M, cards compactos e tabela de performance.
 
-| Arquivo | Período | Conteúdo |
-|---|---|---|
-| `index.html` | 15/jun – 20/jul (1º mês) | Meta Ads do mês + destaque das feiras agro |
-| `relatorio-15-24-jun.html` | 15 – 24/jun (1ª semana) | Meta Ads + orgânico do Instagram |
+## Como rodar localmente
 
-`index.html` é sempre o relatório mais recente (o que abre por padrão no link).
+1. Copie `.env.example` para `.env`.
+2. Ajuste `CLIENT_USERNAME`, `CLIENT_PASSWORD` e `SESSION_SECRET`.
+3. Preencha `META_ACCESS_TOKEN` e `META_AD_ACCOUNT_ID` com os dados da conta de anuncios da T8M, ou configure o conector OAuth.
+4. Rode:
 
-## Publicar (GitHub + Vercel)
-1. Suba todos os arquivos num repositório do GitHub.
-2. Em vercel.com -> Add New -> Project -> Import o repositório.
-3. Framework Preset = Other, Build Command e Output Directory em branco -> Deploy.
-4. Sai a URL pública (ex.: t8mrelatoriometa.vercel.app) — o link responsivo para compartilhar.
+```bash
+npm start
+```
 
-Cada novo commit republica automaticamente.
+O painel abre em `http://localhost:4173`.
 
-## Adicionar um novo período (nos próximos meses)
-1. Gere o novo relatório como relatorio-<periodo>.html.
-2. Renomeie-o para index.html (vira o mais recente) e mova o antigo index.html para um nome com data.
-3. Em TODOS os arquivos, adicione uma linha no menu do seletor (bloco .periodmenu):
-   <a href="relatorio-<periodo>.html">Rótulo do período</a>
+## Dados reais da conta da T8M
 
-## Exportar PDF
-O botão Exportar PDF usa a impressão nativa do navegador (offline). O PDF sai em tema claro
-(fundo branco, texto escuro), legível e pronto para imprimir — a tela continua preta.
-Na janela: Destino = Salvar como PDF; em Mais configurações, desmarque Cabeçalhos e rodapés; Salvar.
+O painel consulta a conta configurada em `META_AD_ACCOUNT_ID`. O ID pode ser informado com ou sem `act_`.
+
+O token da Meta deve ter acesso de leitura a essa conta de anuncios e permissao para consultar campanhas e insights. Para leitura, o escopo principal e `ads_read`; `business_management` ajuda a listar contas do Business Manager. Em producao, defina:
+
+```bash
+DEMO_MODE=false
+```
+
+Assim, se a credencial falhar, o painel mostra erro em vez de dados ficticios.
+
+## Historico
+
+O seletor de periodo no painel permite carregar:
+
+- Hoje
+- Ontem
+- Ultimos 7 dias
+- Ultimos 30 dias
+- Este mes
+- Mes passado
+- Intervalo personalizado
+
+Para historico, a API muda o periodo enviado ao Meta Ads usando `date_preset` ou `time_range`.
+
+## Conector Meta Ads
+
+O sistema ja tem rotas prontas para OAuth:
+
+- `/api/meta/status`
+- `/api/meta/connect`
+- `/api/meta/callback`
+- `/api/meta/accounts`
+- `/api/meta/disconnect`
+
+Para ativar o botao "Conectar Meta", configure:
+
+- `META_APP_ID`
+- `META_APP_SECRET`
+- `META_REDIRECT_URI`
+
+No app da Meta, cadastre a URL de callback:
+
+```text
+https://seu-dominio.vercel.app/api/meta/callback
+```
+
+Se `META_ACCESS_TOKEN` e `META_AD_ACCOUNT_ID` estiverem definidos no servidor, o painel usa essas credenciais diretamente e bloqueia a conta no servidor. Se nao estiverem, o conector OAuth permite conectar e selecionar a conta de anuncios pelo painel.
+
+## Publicar na Vercel
+
+O projeto ja inclui `vercel.json` e rotas seguras em `/api`.
+
+No painel da Vercel, configure as variaveis:
+
+- `CLIENT_USERNAME`
+- `CLIENT_PASSWORD`
+- `SESSION_SECRET`
+- `META_ACCESS_TOKEN`
+- `META_AD_ACCOUNT_ID`
+- `META_API_VERSION`
+- `META_APP_ID`
+- `META_APP_SECRET`
+- `META_REDIRECT_URI`
+- `DEMO_MODE=false`
+
+Depois publique normalmente. A pasta `public/` vira a interface e `api/` fica responsavel por login e dados da Meta.
+
+## Campos usados
+
+- Conta: `name`, `account_status`, `amount_spent`, `balance`, `currency`, `spend_cap`, `timezone_name`.
+- Campanhas: campanhas com `effective_status=ACTIVE`.
+- Periodo selecionado: `spend`, `impressions`, `reach`, `clicks`, `ctr`, `cpc`, `cpm`, `actions`.

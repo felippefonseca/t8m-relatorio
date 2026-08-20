@@ -1,0 +1,13 @@
+{
+  "name": "meta-ads-client-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Painel para cliente acompanhar saldo e campanhas ativas no Meta Ads.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
