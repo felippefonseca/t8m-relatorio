@@ -56,6 +56,8 @@ const fields = {
 };
 
 let selectedAdAccountId = localStorage.getItem("t8m_meta_ad_account_id") || "";
+let dashboardRequestId = 0;
+let dashboardController = null;
 
 boot();
 
@@ -128,6 +130,8 @@ logoutButton.addEventListener("click", async () => {
   showLogin();
 });
 
+document.addEventListener("click", handlePreviewClick);
+
 async function boot() {
   try {
     const session = await request("/api/session");
@@ -144,13 +148,18 @@ async function boot() {
 }
 
 async function loadDashboard() {
-  refreshButton.disabled = true;
-  refreshButton.textContent = "Atualizando...";
+  dashboardController?.abort();
+  dashboardController = new AbortController();
+  const requestId = ++dashboardRequestId;
+  setDashboardLoading(true);
 
   try {
-    const data = await request(buildDashboardUrl());
+    const data = await request(buildDashboardUrl(), { signal: dashboardController.signal });
+    if (requestId !== dashboardRequestId) return;
     renderDashboard(data);
   } catch (error) {
+    if (error.name === "AbortError") return;
+    if (requestId !== dashboardRequestId) return;
     if (error.status === 401) {
       showLogin();
       loginMessage.textContent = "Sessao expirada.";
@@ -160,8 +169,7 @@ async function loadDashboard() {
     fields.lastUpdated.textContent = error.message;
     renderDashboardError(error.message);
   } finally {
-    refreshButton.disabled = false;
-    refreshButton.textContent = "Atualizar";
+    if (requestId === dashboardRequestId) setDashboardLoading(false);
   }
 }
 
@@ -172,11 +180,17 @@ function renderDashboard(data) {
   fields.accountName.textContent = account.name;
   fields.accountStatus.textContent = `Conta ${account.status.toLowerCase()}`;
   fields.lastUpdated.textContent = `Atualizado em ${formatDateTime(data.updatedAt)}`;
-  fields.balanceValue.textContent = account.balance.formatted;
+  fields.balanceValue.textContent = data.source.mode === "live" ? "Conferir no Meta" : account.balance.formatted;
   fields.balanceHint.textContent =
-    data.source.mode === "live" ? "Saldo informado pela Meta" : "Dados de demonstracao";
-  fields.remainingCapValue.textContent = account.remainingCap.formatted;
-  fields.spendCapValue.textContent = `Limite total: ${account.spendCap.formatted}`;
+    data.source.mode === "live"
+      ? `API retornou ${account.balance.formatted}; pode diferir do saldo visivel no Gerenciador.`
+      : "Dados de demonstracao";
+  fields.remainingCapValue.textContent = account.spendCapConfigured
+    ? account.remainingCap.formatted
+    : "Sem limite";
+  fields.spendCapValue.textContent = account.spendCapConfigured
+    ? `Limite Meta: ${account.spendCap.formatted}`
+    : "Nenhum spending cap configurado na conta.";
   fields.todaySpendValue.textContent = data.summary.spendToday.formatted;
   fields.todayImpressionsValue.textContent = `${formatNumber(
     data.summary.impressionsToday
@@ -197,6 +211,16 @@ function renderDashboard(data) {
   renderAdCards(data.ads || []);
   emptyState.classList.toggle("hidden", data.campaigns.length > 0);
   adsEmptyState.classList.toggle("hidden", (data.ads || []).length > 0);
+}
+
+function setDashboardLoading(isLoading) {
+  dashboardView.classList.toggle("is-loading", isLoading);
+  refreshButton.disabled = isLoading;
+  refreshButton.textContent = isLoading ? "Atualizando..." : "Atualizar";
+  applyPeriodButton.disabled = isLoading;
+  periodSelect.disabled = isLoading;
+  sinceDate.disabled = isLoading;
+  untilDate.disabled = isLoading;
 }
 
 async function loadConnectorStatus() {
@@ -573,6 +597,20 @@ function renderAdPreview(ad) {
     : `<span class="ad-thumb-placeholder">Preview</span>`;
 
   if (!href) {
+    if (ad.id || ad.creativeId) {
+      return `
+        <button
+          class="ad-preview-link preview-button"
+          data-preview-ad-id="${escapeHtml(ad.id || "")}"
+          data-preview-creative-id="${escapeHtml(ad.creativeId || "")}"
+          type="button"
+        >
+          ${media}
+          <span>Gerar preview</span>
+        </button>
+      `;
+    }
+
     return `<div class="ad-preview-link disabled">${media}<span>${label}</span></div>`;
   }
 
@@ -588,6 +626,45 @@ function renderAdPreview(ad) {
       <span>${label}</span>
     </a>
   `;
+}
+
+async function handlePreviewClick(event) {
+  const button = event.target.closest("[data-preview-ad-id]");
+  if (!button) return;
+
+  event.preventDefault();
+  const label = button.querySelector("span:last-child");
+  const originalLabel = label?.textContent || "Gerar preview";
+  const previewWindow = window.open("", "_blank");
+  button.disabled = true;
+  if (label) label.textContent = "Abrindo...";
+
+  try {
+    const params = new URLSearchParams();
+    if (button.dataset.previewAdId) params.set("adId", button.dataset.previewAdId);
+    if (button.dataset.previewCreativeId) {
+      params.set("creativeId", button.dataset.previewCreativeId);
+    }
+    const response = await request(`/api/meta/preview?${params.toString()}`);
+    if (previewWindow) {
+      previewWindow.location.href = response.previewUrl;
+    } else {
+      window.location.href = response.previewUrl;
+    }
+    if (label) label.textContent = "Abrir preview";
+  } catch (error) {
+    previewWindow?.close();
+    button.classList.add("preview-error");
+    if (label) label.textContent = "Indisponível";
+    window.setTimeout(() => {
+      button.classList.remove("preview-error");
+      button.disabled = false;
+      if (label) label.textContent = originalLabel;
+    }, 2600);
+    return;
+  }
+
+  button.disabled = false;
 }
 
 function showLogin() {

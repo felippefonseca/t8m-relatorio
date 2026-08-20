@@ -19,7 +19,7 @@ import {
   getConnectorStatus,
   listAdAccounts
 } from "./lib/meta-connector.js";
-import { getDashboardData } from "./lib/meta-dashboard.js";
+import { getAdPreviewData, getDashboardData } from "./lib/meta-dashboard.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
@@ -152,6 +152,25 @@ async function handleApi(request, response, url) {
     sendJson(response, 200, {
       accounts: await listAdAccounts(getMetaAccessToken(request.headers))
     });
+    return;
+  }
+
+  if (url.pathname === "/api/meta/preview" && request.method === "GET") {
+    try {
+      sendJson(
+        response,
+        200,
+        await getAdPreviewData({
+          accessToken: getMetaAccessToken(request.headers),
+          adId: url.searchParams.get("adId"),
+          creativeId: url.searchParams.get("creativeId")
+        })
+      );
+    } catch (error) {
+      sendJson(response, 400, {
+        message: error.message || "Nao foi possivel abrir o preview deste anuncio."
+      });
+    }
     return;
   }
 

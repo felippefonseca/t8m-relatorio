@@ -1,6 +1,6 @@
 # Painel Meta Ads | T8M Energia Solar
 
-Painel privado para a T8M acompanhar saldo da conta de anuncios, campanhas com entrega, anuncios em veiculacao e historico de performance no Meta Ads.
+Painel privado para a T8M acompanhar investimento, campanhas com entrega, anuncios em veiculacao, historico de performance e campos financeiros retornados pelo Meta Ads.
 
 Ele usa a identidade dos relatorios antigos: fundo escuro, laranja T8M, cards compactos e tabela de performance.
 
@@ -28,6 +28,8 @@ DEMO_MODE=false
 ```
 
 Assim, se a credencial falhar, o painel mostra erro em vez de dados ficticios.
+
+Observacao sobre financeiro: os campos `balance`, `spend_cap` e `amount_spent` sao retornados pela API da Meta, mas `balance` pode representar cobranca/faturamento e nao necessariamente o saldo disponivel visto no Gerenciador de Anuncios. Por isso o painel exibe esse bloco como "Financeiro Meta" e nao como saldo real confirmado.
 
 ## Historico
 
@@ -99,4 +101,4 @@ Depois publique normalmente. A pasta `public/` vira a interface e `api/` fica re
 - Campanhas: campanhas com `effective_status=ACTIVE`.
 - Periodo selecionado: `spend`, `impressions`, `reach`, `clicks`, `ctr`, `cpc`, `cpm`, `actions`.
 - Anuncios: `name`, `effective_status`, `campaign_id`, `campaign`, `creative`, `preview_shareable_link`.
-- Preview: o sistema tenta usar o link compartilhavel do anuncio e, quando necessario, consulta `/previews` com `MOBILE_FEED_STANDARD`.
+- Preview: o sistema usa o link compartilhavel quando a Meta retorna. Quando nao retorna, o painel tenta consultar `/previews` com `MOBILE_FEED_STANDARD` somente no clique do usuario para nao deixar a troca de periodo lenta.

@@ -17,16 +17,14 @@
     <main class="app-shell">
       <section class="login-view" id="loginView" aria-labelledby="loginTitle">
         <div class="login-panel">
-          <div class="brand-block">
+          <div class="login-brand">
             <img class="brand-logo" src="/assets/t8m-logo.png" alt="T8M Energia" />
-            <div>
-              <p class="eyebrow">Area executiva</p>
-              <h1 id="loginTitle">Sua mídia em 30 segundos</h1>
-            </div>
+            <p class="eyebrow">Area executiva</p>
+            <h1 id="loginTitle">Visão rápida da mídia</h1>
           </div>
           <p class="login-copy">
-            Entre para ver o que está rodando, quanto foi investido, quais campanhas
-            estão trazendo resultado e o histórico dos fechamentos anteriores.
+            Acompanhe investimento, campanhas, anúncios e histórico em uma tela
+            direta, sem precisar abrir o Gerenciador de Anúncios.
           </p>
           <div class="login-signals" aria-label="Resumo do painel">
             <span>Meta Ads ao vivo</span>
@@ -189,14 +187,14 @@
 
         <section class="metric-grid" aria-label="Resumo da conta">
           <article class="metric-card balance-card">
-            <p>Saldo da conta</p>
+            <p>Financeiro Meta</p>
             <strong id="balanceValue">--</strong>
-            <span id="balanceHint">Saldo informado pela Meta</span>
+            <span id="balanceHint">Campo financeiro retornado pela API</span>
           </article>
           <article class="metric-card">
-            <p>Limite restante</p>
+            <p>Limite de gastos</p>
             <strong id="remainingCapValue">--</strong>
-            <span id="spendCapValue">Limite total: --</span>
+            <span id="spendCapValue">Limite configurado na Meta</span>
           </article>
           <article class="metric-card">
             <p>Investimento</p>
