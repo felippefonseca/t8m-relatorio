@@ -34,7 +34,7 @@
 
           <form class="login-form" id="loginForm">
             <label>
-              <span>Usuario</span>
+              <span>Usuário</span>
               <input
                 autocomplete="username"
                 id="username"
@@ -92,20 +92,20 @@
             <div class="control-head">
               <span class="sec-n">01</span>
               <div>
-                <p class="eyebrow">Periodo</p>
+                <p class="eyebrow">Período</p>
                 <h2 id="periodLabel">Hoje</h2>
               </div>
             </div>
             <div class="period-controls">
               <label>
-                <span>Historico</span>
+                <span>Histórico</span>
                 <select id="periodSelect">
                   <option value="today">Hoje</option>
                   <option value="yesterday">Ontem</option>
-                  <option value="last_7d">Ultimos 7 dias</option>
-                  <option value="last_30d">Ultimos 30 dias</option>
-                  <option value="this_month">Este mes</option>
-                  <option value="last_month">Mes passado</option>
+                  <option value="last_7d">Últimos 7 dias</option>
+                  <option value="last_30d">Últimos 30 dias</option>
+                  <option value="this_month">Este mês</option>
+                  <option value="last_month">Mês passado</option>
                   <option value="custom">Personalizado</option>
                 </select>
               </label>
@@ -136,7 +136,7 @@
             <div class="connector-box">
               <div>
                 <span class="connector-status" id="connectorStatus">Verificando</span>
-                <p id="connectorHint">Conexao da conta de anuncios.</p>
+                <p id="connectorHint">Conexão da conta de anúncios.</p>
               </div>
               <button class="primary-button" id="connectMetaButton" type="button">
                 Conectar Meta
@@ -146,7 +146,7 @@
               </button>
             </div>
             <label class="account-picker hidden" id="accountPicker">
-              <span>Conta de anuncios</span>
+              <span>Conta de anúncios</span>
               <select id="adAccountSelect"></select>
             </label>
           </article>
@@ -186,7 +186,7 @@
         </section>
 
         <section class="metric-grid" aria-label="Resumo da conta">
-          <article class="metric-card balance-card">
+          <article class="metric-card balance-card" id="balanceCard">
             <p>Financeiro Meta</p>
             <strong id="balanceValue">--</strong>
             <span id="balanceHint">Campo financeiro retornado pela API</span>
@@ -226,10 +226,37 @@
           </article>
         </section>
 
+        <section class="best-ads-panel" aria-label="Melhores anúncios">
+          <div class="section-title">
+            <span class="sec-n">04</span>
+            <div>
+              <p class="eyebrow">Melhores anúncios</p>
+              <h2>Destaques do período</h2>
+            </div>
+          </div>
+          <div class="best-ads-grid">
+            <article class="best-ad-card">
+              <p>Mais resultado</p>
+              <strong id="bestAdResultName">--</strong>
+              <span id="bestAdResultHint">Aguardando dados</span>
+            </article>
+            <article class="best-ad-card">
+              <p>Melhor custo</p>
+              <strong id="bestAdCostName">--</strong>
+              <span id="bestAdCostHint">Aguardando dados</span>
+            </article>
+            <article class="best-ad-card">
+              <p>Maior investimento</p>
+              <strong id="topAdSpendName">--</strong>
+              <span id="topAdSpendHint">Aguardando dados</span>
+            </article>
+          </div>
+        </section>
+
         <section class="content-band">
           <div class="section-heading">
             <div class="section-title">
-              <span class="sec-n">04</span>
+              <span class="sec-n">05</span>
               <div>
                 <p class="eyebrow" id="campaignPeriodEyebrow">Hoje</p>
                 <h2>Campanhas com entrega</h2>
@@ -248,7 +275,7 @@
                   <th>Invest.</th>
                   <th>CPR</th>
                   <th>Alcance</th>
-                  <th>Impressoes</th>
+                  <th>Impressões</th>
                   <th>CTR</th>
                 </tr>
               </thead>
@@ -265,13 +292,13 @@
         <section class="content-band ads-band">
           <div class="section-heading">
             <div class="section-title">
-              <span class="sec-n">05</span>
+              <span class="sec-n">06</span>
               <div>
                 <p class="eyebrow" id="adsPeriodEyebrow">Hoje</p>
-                <h2>Anúncios rodando</h2>
+                <h2>Todos os anúncios</h2>
               </div>
             </div>
-            <span class="pill">Preview clicável</span>
+            <span class="pill" id="adsCountPill">0 anúncios no recorte</span>
           </div>
 
           <div class="table-wrap">
@@ -301,7 +328,7 @@
         <section class="content-band history-band">
           <div class="section-heading">
             <div class="section-title">
-              <span class="sec-n">06</span>
+              <span class="sec-n">07</span>
               <div>
                 <p class="eyebrow">Histórico salvo</p>
                 <h2>Relatórios anteriores</h2>

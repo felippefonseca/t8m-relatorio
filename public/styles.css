@@ -404,6 +404,7 @@ h2 {
 .owner-main,
 .owner-mini-card,
 .insight-card,
+.best-ad-card,
 .history-summary,
 .history-stat {
   border: 1px solid var(--line);
@@ -533,6 +534,20 @@ h2 {
   background: linear-gradient(160deg, rgba(241, 100, 34, 0.16), rgba(241, 100, 34, 0.02));
 }
 
+.balance-card.danger-card {
+  border-color: rgba(255, 107, 107, 0.38);
+  background: linear-gradient(160deg, rgba(255, 107, 107, 0.16), rgba(241, 100, 34, 0.04));
+}
+
+.balance-card.danger-card strong {
+  color: var(--danger);
+}
+
+.balance-card.ok-card {
+  border-color: rgba(63, 209, 121, 0.2);
+  background: linear-gradient(160deg, rgba(63, 209, 121, 0.08), rgba(255, 255, 255, 0.015));
+}
+
 .metric-card p {
   margin-bottom: 12px;
   color: var(--muted);
@@ -573,6 +588,56 @@ h2 {
 .insight-card {
   min-height: 128px;
   padding: 16px 17px;
+}
+
+.best-ads-panel {
+  display: grid;
+  gap: 14px;
+  margin: -10px 0 28px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 18px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+    var(--panel);
+}
+
+.best-ads-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.best-ad-card {
+  min-height: 126px;
+  padding: 16px;
+  background: var(--panel-2);
+}
+
+.best-ad-card p {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.best-ad-card strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: clamp(1.02rem, 1.8vw, 1.22rem);
+  line-height: 1.15;
+}
+
+.best-ad-card span {
+  display: block;
+  margin-top: 10px;
+  color: var(--dim);
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 .content-band {
@@ -866,7 +931,8 @@ tr:last-child td {
   }
 
   .owner-side-grid,
-  .insight-grid {
+  .insight-grid,
+  .best-ads-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -911,7 +977,8 @@ tr:last-child td {
   }
 
   .owner-side-grid,
-  .insight-grid {
+  .insight-grid,
+  .best-ads-grid {
     grid-template-columns: 1fr;
   }
 

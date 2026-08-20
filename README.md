@@ -30,6 +30,11 @@ DEMO_MODE=false
 Assim, se a credencial falhar, o painel mostra erro em vez de dados ficticios.
 
 Observacao sobre financeiro: os campos `balance`, `spend_cap` e `amount_spent` sao retornados pela API da Meta, mas `balance` pode representar cobranca/faturamento e nao necessariamente o saldo disponivel visto no Gerenciador de Anuncios. Por isso o painel exibe esse bloco como "Financeiro Meta" e nao como saldo real confirmado.
+Quando esse campo vem abaixo do limite de seguranca configurado, o painel mostra "Recarregar conta" para evitar que a midia pare. O limite padrao e R$ 100,00 e pode ser ajustado com:
+
+```bash
+FINANCE_ALERT_THRESHOLD=100
+```
 
 ## Historico
 
@@ -101,4 +106,5 @@ Depois publique normalmente. A pasta `public/` vira a interface e `api/` fica re
 - Campanhas: campanhas com `effective_status=ACTIVE`.
 - Periodo selecionado: `spend`, `impressions`, `reach`, `clicks`, `ctr`, `cpc`, `cpm`, `actions`.
 - Anuncios: `name`, `effective_status`, `campaign_id`, `campaign`, `creative`, `preview_shareable_link`.
+- Historico de anuncios: a listagem prioriza os insights do periodo, entao anuncios com gasto/entrega aparecem mesmo quando a Meta nao retorna todos os detalhes de criativo.
 - Preview: o sistema usa o link compartilhavel quando a Meta retorna. Quando nao retorna, o painel tenta consultar `/previews` com `MOBILE_FEED_STANDARD` somente no clique do usuario para nao deixar a troca de periodo lenta.
