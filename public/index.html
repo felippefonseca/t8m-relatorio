@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>T8M Energia Solar | Painel Meta Ads</title>
+    <title>T8M | Painel executivo de mídia</title>
     <link rel="icon" href="/assets/favicon.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,14 +20,19 @@
           <div class="brand-block">
             <img class="brand-logo" src="/assets/t8m-logo.png" alt="T8M Energia" />
             <div>
-              <p class="eyebrow">Area do cliente</p>
-              <h1 id="loginTitle">T8M Energia Solar</h1>
+              <p class="eyebrow">Area executiva</p>
+              <h1 id="loginTitle">Sua mídia em 30 segundos</h1>
             </div>
           </div>
           <p class="login-copy">
-            Painel privado para acompanhar saldo e campanhas ativas na conta de
-            anuncios da T8M.
+            Entre para ver o que está rodando, quanto foi investido, quais campanhas
+            estão trazendo resultado e o histórico dos fechamentos anteriores.
           </p>
+          <div class="login-signals" aria-label="Resumo do painel">
+            <span>Meta Ads ao vivo</span>
+            <span>Histórico preservado</span>
+            <span>Leitura rápida</span>
+          </div>
 
           <form class="login-form" id="loginForm">
             <label>
@@ -74,8 +79,8 @@
             </div>
           </div>
           <p class="lead">
-            Visao rapida da conta de anuncios: saldo, gasto de hoje e campanhas
-            em veiculacao.
+            Uma leitura rápida para saber se a conta está saudável, onde o dinheiro
+            está indo e o que precisa de atenção agora.
           </p>
           <div class="meta-line">
             <span id="accountStatus">Conta ativa</span>
@@ -149,6 +154,39 @@
           </article>
         </section>
 
+        <section class="owner-overview" aria-label="Leitura executiva">
+          <div class="owner-main">
+            <div class="section-title">
+              <span class="sec-n">03</span>
+              <div>
+                <p class="eyebrow">Leitura do dono</p>
+                <h2 id="ownerSignalTitle">Carregando visão</h2>
+              </div>
+            </div>
+            <p id="ownerSignalText">
+              Assim que os dados carregarem, você verá o resumo mais importante do
+              período.
+            </p>
+            <div class="owner-status-row">
+              <span class="health-pill" id="ownerHealth">Verificando</span>
+              <span id="ownerSpendPace">Custo médio em análise</span>
+            </div>
+          </div>
+
+          <div class="owner-side-grid">
+            <article class="owner-mini-card">
+              <p>Melhor campanha</p>
+              <strong id="ownerBestCampaign">--</strong>
+              <span id="ownerBestCampaignHint">Aguardando dados</span>
+            </article>
+            <article class="owner-mini-card">
+              <p>Principal atenção</p>
+              <strong id="ownerAttention">--</strong>
+              <span id="ownerAttentionHint">Aguardando dados</span>
+            </article>
+          </div>
+        </section>
+
         <section class="metric-grid" aria-label="Resumo da conta">
           <article class="metric-card balance-card">
             <p>Saldo da conta</p>
@@ -166,22 +204,40 @@
             <span id="todayImpressionsValue">-- impressoes</span>
           </article>
           <article class="metric-card">
-            <p>Campanhas</p>
+            <p>Campanhas no período</p>
             <strong id="activeCampaignsValue">--</strong>
-            <span id="todayResultsValue">-- resultados hoje</span>
+            <span id="todayResultsValue">-- resultados no período</span>
+          </article>
+        </section>
+
+        <section class="insight-grid" aria-label="Resumo executivo">
+          <article class="insight-card">
+            <p>Melhor custo por resultado</p>
+            <strong id="bestCostValue">--</strong>
+            <span id="bestCostHint">Aguardando dados</span>
+          </article>
+          <article class="insight-card">
+            <p>Campanhas sem resultado</p>
+            <strong id="zeroResultValue">--</strong>
+            <span id="zeroResultHint">Aguardando dados</span>
+          </article>
+          <article class="insight-card">
+            <p>Maior investimento</p>
+            <strong id="topSpendValue">--</strong>
+            <span id="topSpendHint">Aguardando dados</span>
           </article>
         </section>
 
         <section class="content-band">
           <div class="section-heading">
             <div class="section-title">
-              <span class="sec-n">03</span>
+              <span class="sec-n">04</span>
               <div>
                 <p class="eyebrow" id="campaignPeriodEyebrow">Hoje</p>
-                <h2>Campanhas em veiculacao</h2>
+                <h2>Campanhas com entrega</h2>
               </div>
             </div>
-            <span class="pill">Conta de anuncios T8M</span>
+            <span class="pill">Com gasto no recorte</span>
           </div>
 
           <div class="table-wrap">
@@ -204,7 +260,91 @@
 
           <div class="mobile-campaigns" id="mobileCampaigns"></div>
           <div class="empty-state hidden" id="emptyState">
-            Nenhuma campanha ativa encontrada hoje.
+            Nenhuma campanha com entrega encontrada neste período.
+          </div>
+        </section>
+
+        <section class="content-band ads-band">
+          <div class="section-heading">
+            <div class="section-title">
+              <span class="sec-n">05</span>
+              <div>
+                <p class="eyebrow" id="adsPeriodEyebrow">Hoje</p>
+                <h2>Anúncios rodando</h2>
+              </div>
+            </div>
+            <span class="pill">Preview clicável</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="ads-table">
+              <thead>
+                <tr>
+                  <th>Preview</th>
+                  <th>Anúncio</th>
+                  <th>Campanha</th>
+                  <th>Objetivo</th>
+                  <th>Resultado</th>
+                  <th>Invest.</th>
+                  <th>CPR</th>
+                  <th>CTR</th>
+                </tr>
+              </thead>
+              <tbody id="adRows"></tbody>
+            </table>
+          </div>
+
+          <div class="mobile-ads" id="mobileAds"></div>
+          <div class="empty-state hidden" id="adsEmptyState">
+            Nenhum anúncio com entrega encontrado neste período.
+          </div>
+        </section>
+
+        <section class="content-band history-band">
+          <div class="section-heading">
+            <div class="section-title">
+              <span class="sec-n">06</span>
+              <div>
+                <p class="eyebrow">Histórico salvo</p>
+                <h2>Relatórios anteriores</h2>
+              </div>
+            </div>
+            <a
+              class="ghost-link"
+              href="/relatorio-15-24-jun.html"
+              rel="noopener"
+              target="_blank"
+            >
+              Abrir relatório completo
+            </a>
+          </div>
+
+          <div class="history-grid">
+            <article class="history-summary">
+              <div>
+                <p class="eyebrow">15 a 24 de junho de 2026</p>
+                <h3>Os primeiros 10 dias de gestão da conta</h3>
+              </div>
+              <p>
+                Registro original do período com Meta Ads e orgânico preservado para
+                comparação com a operação atual.
+              </p>
+            </article>
+            <article class="history-stat">
+              <p>Conversas</p>
+              <strong>65</strong>
+              <span>R$ 27,07 por conversa</span>
+            </article>
+            <article class="history-stat">
+              <p>Investimento</p>
+              <strong>R$ 1.759,85</strong>
+              <span>Meta Ads no período</span>
+            </article>
+            <article class="history-stat">
+              <p>Orgânico</p>
+              <strong>95.424</strong>
+              <span>contas alcançadas</span>
+            </article>
           </div>
         </section>
       </section>

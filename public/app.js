@@ -6,7 +6,10 @@ const refreshButton = document.querySelector("#refreshButton");
 const logoutButton = document.querySelector("#logoutButton");
 const campaignRows = document.querySelector("#campaignRows");
 const mobileCampaigns = document.querySelector("#mobileCampaigns");
+const adRows = document.querySelector("#adRows");
+const mobileAds = document.querySelector("#mobileAds");
 const emptyState = document.querySelector("#emptyState");
+const adsEmptyState = document.querySelector("#adsEmptyState");
 const periodSelect = document.querySelector("#periodSelect");
 const customRange = document.querySelector("#customRange");
 const sinceDate = document.querySelector("#sinceDate");
@@ -34,7 +37,22 @@ const fields = {
   todayResultsValue: document.querySelector("#todayResultsValue"),
   timezoneValue: document.querySelector("#timezoneValue"),
   periodLabel: document.querySelector("#periodLabel"),
-  campaignPeriodEyebrow: document.querySelector("#campaignPeriodEyebrow")
+  campaignPeriodEyebrow: document.querySelector("#campaignPeriodEyebrow"),
+  adsPeriodEyebrow: document.querySelector("#adsPeriodEyebrow"),
+  ownerSignalTitle: document.querySelector("#ownerSignalTitle"),
+  ownerSignalText: document.querySelector("#ownerSignalText"),
+  ownerHealth: document.querySelector("#ownerHealth"),
+  ownerSpendPace: document.querySelector("#ownerSpendPace"),
+  ownerBestCampaign: document.querySelector("#ownerBestCampaign"),
+  ownerBestCampaignHint: document.querySelector("#ownerBestCampaignHint"),
+  ownerAttention: document.querySelector("#ownerAttention"),
+  ownerAttentionHint: document.querySelector("#ownerAttentionHint"),
+  bestCostValue: document.querySelector("#bestCostValue"),
+  bestCostHint: document.querySelector("#bestCostHint"),
+  zeroResultValue: document.querySelector("#zeroResultValue"),
+  zeroResultHint: document.querySelector("#zeroResultHint"),
+  topSpendValue: document.querySelector("#topSpendValue"),
+  topSpendHint: document.querySelector("#topSpendHint")
 };
 
 let selectedAdAccountId = localStorage.getItem("t8m_meta_ad_account_id") || "";
@@ -140,6 +158,7 @@ async function loadDashboard() {
     }
     fields.sourceLabel.textContent = "Indisponivel";
     fields.lastUpdated.textContent = error.message;
+    renderDashboardError(error.message);
   } finally {
     refreshButton.disabled = false;
     refreshButton.textContent = "Atualizar";
@@ -169,10 +188,15 @@ function renderDashboard(data) {
   fields.timezoneValue.textContent = account.timezone;
   fields.periodLabel.textContent = periodLabel;
   fields.campaignPeriodEyebrow.textContent = periodLabel;
+  fields.adsPeriodEyebrow.textContent = periodLabel;
 
+  renderExecutiveSummary(data, periodLabel);
   renderCampaignRows(data.campaigns);
   renderCampaignCards(data.campaigns);
+  renderAdRows(data.ads || []);
+  renderAdCards(data.ads || []);
   emptyState.classList.toggle("hidden", data.campaigns.length > 0);
+  adsEmptyState.classList.toggle("hidden", (data.ads || []).length > 0);
 }
 
 async function loadConnectorStatus() {
@@ -260,6 +284,152 @@ function selectedPeriodLabel() {
   return periodSelect.options[periodSelect.selectedIndex]?.textContent || "Hoje";
 }
 
+function renderExecutiveSummary(data, periodLabel) {
+  const campaigns = data.campaigns || [];
+  const ads = data.ads || [];
+  const summary = data.summary || {};
+  const account = data.account || {};
+  const currency = account.currency || "BRL";
+  const spend = moneyRaw(summary.spendToday);
+  const results = Number(summary.resultsToday || 0);
+  const averageCost = results > 0 ? spend / results : null;
+  const campaignsWithSpend = campaigns.filter((campaign) => moneyRaw(campaign.spendToday) > 0);
+  const zeroResultCampaigns = campaignsWithSpend.filter((campaign) => !campaign.resultCount);
+  const bestResultCampaign = [...campaigns]
+    .filter((campaign) => campaign.resultCount > 0)
+    .sort((a, b) => b.resultCount - a.resultCount || moneyRaw(a.spendToday) - moneyRaw(b.spendToday))[0];
+  const bestCostCampaign = [...campaigns]
+    .filter((campaign) => campaign.resultCount > 0 && moneyRaw(campaign.costPerResult, null) !== null)
+    .sort((a, b) => moneyRaw(a.costPerResult) - moneyRaw(b.costPerResult))[0];
+  const topSpendCampaign = [...campaigns].sort(
+    (a, b) => moneyRaw(b.spendToday) - moneyRaw(a.spendToday)
+  )[0];
+  const warning = data.warnings?.[0] || "";
+
+  let health = { level: "ok", label: "Saudável", title: "Conta ativa e gerando resultado" };
+  if (data.source?.mode !== "live") {
+    health = { level: "warn", label: "Demonstração", title: "Painel pronto para dados reais" };
+  } else if (!campaigns.length) {
+    health = { level: "danger", label: "Sem entrega", title: "Nenhuma entrega no período" };
+  } else if (spend > 0 && results === 0) {
+    health = { level: "warn", label: "Acompanhar", title: "Há gasto, mas sem resultado" };
+  } else if (zeroResultCampaigns.length > 0) {
+    health = { level: "warn", label: "Atenção", title: "Conta rodando com pontos para olhar" };
+  }
+
+  fields.ownerSignalTitle.textContent = health.title;
+  fields.ownerSignalText.textContent = buildExecutiveText({
+    campaigns,
+    ads,
+    spend,
+    results,
+    periodLabel,
+    currency,
+    zeroResultCampaigns,
+    warning
+  });
+  setHealth(health.level, health.label);
+  fields.ownerSpendPace.textContent =
+    averageCost === null
+      ? "Ainda sem custo medio por resultado neste periodo."
+      : `Custo médio: ${formatMoney(averageCost, currency)} por resultado.`;
+
+  if (bestResultCampaign) {
+    fields.ownerBestCampaign.textContent = shortName(bestResultCampaign.name);
+    fields.ownerBestCampaignHint.textContent = `${formatNumber(
+      bestResultCampaign.resultCount
+    )} ${bestResultCampaign.resultLabel.toLowerCase()} com ${
+      bestResultCampaign.spendToday.formatted
+    } investidos.`;
+  } else {
+    fields.ownerBestCampaign.textContent = "Ainda sem destaque";
+    fields.ownerBestCampaignHint.textContent = "Nenhuma campanha trouxe resultado neste recorte.";
+  }
+
+  if (warning) {
+    fields.ownerAttention.textContent = "Anúncios";
+    fields.ownerAttentionHint.textContent =
+      "A Meta não liberou os anúncios agora, mas as campanhas seguem atualizadas.";
+  } else if (zeroResultCampaigns.length) {
+    fields.ownerAttention.textContent = shortName(zeroResultCampaigns[0].name);
+    fields.ownerAttentionHint.textContent = `Gastou ${
+      zeroResultCampaigns[0].spendToday.formatted
+    } sem resultado no período.`;
+  } else if (!campaigns.length) {
+    fields.ownerAttention.textContent = "Sem campanha";
+    fields.ownerAttentionHint.textContent = "Não houve entrega com gasto neste recorte.";
+  } else {
+    fields.ownerAttention.textContent = "Sem alerta critico";
+    fields.ownerAttentionHint.textContent = "As campanhas com gasto trouxeram resultado no recorte.";
+  }
+
+  fields.bestCostValue.textContent = bestCostCampaign?.costPerResult.formatted || "--";
+  fields.bestCostHint.textContent = bestCostCampaign
+    ? shortName(bestCostCampaign.name)
+    : "Aguardando campanhas com resultado.";
+  fields.zeroResultValue.textContent = String(zeroResultCampaigns.length);
+  fields.zeroResultHint.textContent = zeroResultCampaigns.length
+    ? zeroResultCampaigns.length === 1
+      ? shortName(zeroResultCampaigns[0].name)
+      : `${shortName(zeroResultCampaigns[0].name)} e mais ${
+          zeroResultCampaigns.length - 1
+        } em atenção.`
+    : "Nenhuma campanha com gasto ficou sem resultado.";
+  fields.topSpendValue.textContent = topSpendCampaign?.spendToday.formatted || "--";
+  fields.topSpendHint.textContent = topSpendCampaign
+    ? shortName(topSpendCampaign.name)
+    : "Sem investimento no período.";
+}
+
+function buildExecutiveText({
+  campaigns,
+  ads,
+  spend,
+  results,
+  periodLabel,
+  currency,
+  zeroResultCampaigns,
+  warning
+}) {
+  const campaignText = plural(campaigns.length, "campanha com entrega", "campanhas com entrega");
+  const adText = plural(ads.length, "anúncio analisado", "anúncios analisados");
+  const resultText = plural(results, "resultado", "resultados");
+  const pieces = [
+    `${periodLabel}: ${campaigns.length} ${campaignText}, ${ads.length} ${adText}, ${formatMoney(
+      spend,
+      currency
+    )} investidos e ${formatNumber(results)} ${resultText}.`
+  ];
+
+  if (zeroResultCampaigns.length) {
+    pieces.push(
+      `${zeroResultCampaigns.length} ${plural(
+        zeroResultCampaigns.length,
+        "campanha gastou",
+        "campanhas gastaram"
+      )} sem resultado.`
+    );
+  }
+
+  if (warning) {
+    pieces.push("A leitura de anúncios depende de permissão/retorno da Meta neste momento.");
+  }
+
+  return pieces.join(" ");
+}
+
+function renderDashboardError(message) {
+  fields.ownerSignalTitle.textContent = "Nao foi possivel atualizar";
+  fields.ownerSignalText.textContent = message || "Tente atualizar novamente em alguns instantes.";
+  setHealth("danger", "Indisponivel");
+  fields.ownerSpendPace.textContent = "Dados pausados até a próxima tentativa.";
+}
+
+function setHealth(level, label) {
+  fields.ownerHealth.className = `health-pill ${level}`;
+  fields.ownerHealth.textContent = label;
+}
+
 function renderCampaignRows(campaigns) {
   campaignRows.innerHTML = campaigns
     .map(
@@ -331,6 +501,95 @@ function renderCampaignCards(campaigns) {
     .join("");
 }
 
+function renderAdRows(ads) {
+  adRows.innerHTML = ads
+    .map(
+      (ad) => `
+        <tr>
+          <td>${renderAdPreview(ad)}</td>
+          <td>
+            <div class="ad-copy">
+              <strong>${escapeHtml(ad.name)}</strong>
+              <span>${escapeHtml(truncateText(ad.text || ad.headline || "Sem texto capturado"))}</span>
+            </div>
+          </td>
+          <td>${escapeHtml(shortName(ad.campaignName))}</td>
+          <td>${escapeHtml(readableObjective(ad.objective))}</td>
+          <td>
+            <strong>${formatNumber(ad.resultCount)}</strong>
+            <div class="subtle">${escapeHtml(ad.resultLabel)}</div>
+          </td>
+          <td>${ad.spendToday.formatted}</td>
+          <td>${ad.costPerResult.formatted}</td>
+          <td>${escapeHtml(ad.ctr)}</td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
+function renderAdCards(ads) {
+  mobileAds.innerHTML = ads
+    .map(
+      (ad) => `
+        <article class="ad-card">
+          <header>
+            ${renderAdPreview(ad)}
+            <div>
+              <h3>${escapeHtml(ad.name)}</h3>
+              <span class="status-badge">${escapeHtml(ad.status)}</span>
+            </div>
+          </header>
+          <p>${escapeHtml(truncateText(ad.text || ad.headline || "Sem texto capturado", 140))}</p>
+          <dl>
+            <div>
+              <dt>Campanha</dt>
+              <dd>${escapeHtml(shortName(ad.campaignName))}</dd>
+            </div>
+            <div>
+              <dt>Objetivo</dt>
+              <dd>${escapeHtml(readableObjective(ad.objective))}</dd>
+            </div>
+            <div>
+              <dt>Investimento</dt>
+              <dd>${ad.spendToday.formatted}</dd>
+            </div>
+            <div>
+              <dt>Resultado</dt>
+              <dd>${formatNumber(ad.resultCount)}</dd>
+            </div>
+          </dl>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function renderAdPreview(ad) {
+  const href = ad.previewUrl || ad.destinationUrl || "";
+  const label = ad.previewUrl ? "Abrir preview" : ad.destinationUrl ? "Abrir destino" : "Sem preview";
+  const media = ad.thumbnailUrl
+    ? `<img alt="" loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(ad.thumbnailUrl)}" />`
+    : `<span class="ad-thumb-placeholder">Preview</span>`;
+
+  if (!href) {
+    return `<div class="ad-preview-link disabled">${media}<span>${label}</span></div>`;
+  }
+
+  return `
+    <a
+      aria-label="${escapeHtml(label)} de ${escapeHtml(ad.name)}"
+      class="ad-preview-link"
+      href="${escapeHtml(href)}"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      ${media}
+      <span>${label}</span>
+    </a>
+  `;
+}
+
 function showLogin() {
   dashboardView.classList.add("hidden");
   loginView.classList.remove("hidden");
@@ -368,6 +627,13 @@ function formatNumber(value) {
   return new Intl.NumberFormat("pt-BR").format(value || 0);
 }
 
+function formatMoney(value, currency = "BRL") {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency
+  }).format(Number(value || 0));
+}
+
 function formatDateOnly(value) {
   const [year, month, day] = value.split("-");
   if (!year || !month || !day) return value;
@@ -375,6 +641,7 @@ function formatDateOnly(value) {
 }
 
 function readableObjective(value) {
+  if (!value) return "Sem objetivo informado";
   const labels = {
     OUTCOME_AWARENESS: "Reconhecimento",
     OUTCOME_TRAFFIC: "Trafego",
@@ -391,7 +658,28 @@ function readableObjective(value) {
     SALES: "Vendas",
     AWARENESS: "Reconhecimento"
   };
-  return labels[value] || value.replaceAll("_", " ").toLowerCase();
+  return labels[value] || String(value).replaceAll("_", " ").toLowerCase();
+}
+
+function moneyRaw(payload, fallback = 0) {
+  if (payload && typeof payload.raw === "number") return payload.raw;
+  return fallback;
+}
+
+function shortName(value) {
+  const clean = String(value || "").trim();
+  if (!clean) return "--";
+  return clean.length > 46 ? `${clean.slice(0, 43)}...` : clean;
+}
+
+function truncateText(value, limit = 96) {
+  const clean = String(value || "").replace(/\s+/g, " ").trim();
+  if (clean.length <= limit) return clean;
+  return `${clean.slice(0, limit - 3)}...`;
+}
+
+function plural(count, singular, pluralValue) {
+  return count === 1 ? singular : pluralValue;
 }
 
 function escapeHtml(value) {

@@ -1,6 +1,6 @@
 # Painel Meta Ads | T8M Energia Solar
 
-Painel privado para a T8M acompanhar saldo da conta de anuncios, campanhas ativas e historico de performance no Meta Ads.
+Painel privado para a T8M acompanhar saldo da conta de anuncios, campanhas com entrega, anuncios em veiculacao e historico de performance no Meta Ads.
 
 Ele usa a identidade dos relatorios antigos: fundo escuro, laranja T8M, cards compactos e tabela de performance.
 
@@ -42,6 +42,13 @@ O seletor de periodo no painel permite carregar:
 - Intervalo personalizado
 
 Para historico, a API muda o periodo enviado ao Meta Ads usando `date_preset` ou `time_range`.
+Nos recortes historicos, a lista mostra apenas campanhas e anuncios que tiveram entrega/gasto no periodo, evitando que campanhas antigas sem movimento poluam o painel.
+
+O relatorio antigo de 15 a 24 de junho de 2026 tambem fica preservado no painel em:
+
+```text
+/relatorio-15-24-jun.html
+```
 
 ## Conector Meta Ads
 
@@ -91,3 +98,5 @@ Depois publique normalmente. A pasta `public/` vira a interface e `api/` fica re
 - Conta: `name`, `account_status`, `amount_spent`, `balance`, `currency`, `spend_cap`, `timezone_name`.
 - Campanhas: campanhas com `effective_status=ACTIVE`.
 - Periodo selecionado: `spend`, `impressions`, `reach`, `clicks`, `ctr`, `cpc`, `cpm`, `actions`.
+- Anuncios: `name`, `effective_status`, `campaign_id`, `campaign`, `creative`, `preview_shareable_link`.
+- Preview: o sistema tenta usar o link compartilhavel do anuncio e, quando necessario, consulta `/previews` com `MOBILE_FEED_STANDARD`.
