@@ -30,6 +30,7 @@ const fields = {
   accountName: document.querySelector("#accountName"),
   accountStatus: document.querySelector("#accountStatus"),
   lastUpdated: document.querySelector("#lastUpdated"),
+  balanceTitle: document.querySelector("#balanceTitle"),
   balanceValue: document.querySelector("#balanceValue"),
   balanceHint: document.querySelector("#balanceHint"),
   remainingCapValue: document.querySelector("#remainingCapValue"),
@@ -68,6 +69,7 @@ const fields = {
 let selectedAdAccountId = localStorage.getItem("t8m_meta_ad_account_id") || "";
 let dashboardRequestId = 0;
 let dashboardController = null;
+let financeRefreshTimer = null;
 
 initDashboardNavigation();
 boot();
@@ -168,6 +170,7 @@ async function loadDashboard() {
     const data = await request(buildDashboardUrl(), { signal: dashboardController.signal });
     if (requestId !== dashboardRequestId) return;
     renderDashboard(data);
+    startFinanceAutoRefresh();
   } catch (error) {
     if (error.name === "AbortError") return;
     if (requestId !== dashboardRequestId) return;
@@ -224,24 +227,52 @@ function renderDashboard(data) {
 
 function renderFinanceCard(data) {
   const account = data.account || {};
+  const finance = account.finance || {};
+  const primary = finance.primary || account.availableBalance || account.balance;
+  const financeUpdatedAt = finance.updatedAt || data.updatedAt;
   balanceCard.classList.remove("danger-card", "ok-card");
+  fields.balanceTitle.textContent = finance.cardTitle || "Financeiro Meta";
 
   if (data.source?.mode !== "live") {
-    fields.balanceValue.textContent = account.balance?.formatted || "--";
-    fields.balanceHint.textContent = "Dados de demonstracao";
+    fields.balanceValue.textContent = primary?.formatted || "--";
+    fields.balanceHint.textContent = "Dados de demonstracao.";
     return;
   }
 
   if (account.balanceLow) {
     balanceCard.classList.add("danger-card");
-    fields.balanceValue.textContent = "Recarregar conta";
-    fields.balanceHint.textContent = `A Meta retornou ${account.balance.formatted}, abaixo do limite de segurança.`;
+    fields.balanceValue.textContent = primary?.formatted || "Recarregar";
+    fields.balanceHint.textContent = `Saldo baixo. Recarregar a conta antes de escalar campanhas. Atualizado em ${formatDateTime(financeUpdatedAt)}.`;
     return;
   }
 
-  balanceCard.classList.add("ok-card");
-  fields.balanceValue.textContent = "Sem alerta";
-  fields.balanceHint.textContent = `API retornou ${account.balance.formatted}; conferir no Gerenciador se precisar.`;
+  if (finance.confidence === "unavailable") {
+    fields.balanceValue.textContent = "Não informado";
+    fields.balanceHint.textContent = "A Meta não retornou saldo/limite para esta conta agora.";
+    return;
+  }
+
+  balanceCard.classList.add(finance.isActionableBalance ? "ok-card" : "balance-card");
+  fields.balanceValue.textContent = primary?.formatted || "--";
+  fields.balanceHint.textContent = financeHint(account, finance, financeUpdatedAt);
+}
+
+function financeHint(account, finance, updatedAt) {
+  const updatedText = updatedAt ? ` Atualizado em ${formatDateTime(updatedAt)}.` : "";
+
+  if (finance.confidence === "estimated") {
+    return `${finance.primaryLabel}: limite ${account.spendCap.formatted} menos gasto acumulado ${account.amountSpent.formatted}.${updatedText}`;
+  }
+
+  if (finance.confidence === "direct") {
+    return `${finance.primaryLabel}.${updatedText}`;
+  }
+
+  if (finance.confidence === "billing") {
+    return `${finance.primaryLabel}; esse valor pode representar cobrança/faturamento, não verba disponível.${updatedText}`;
+  }
+
+  return `Aguardando retorno financeiro da Meta.${updatedText}`;
 }
 
 function setDashboardLoading(isLoading) {
@@ -331,6 +362,28 @@ function buildDashboardUrl() {
   return `/api/dashboard?${params.toString()}`;
 }
 
+function buildFinanceUrl() {
+  const params = new URLSearchParams();
+  if (selectedAdAccountId) params.set("adAccountId", selectedAdAccountId);
+  return `/api/meta/finance?${params.toString()}`;
+}
+
+function startFinanceAutoRefresh() {
+  window.clearInterval(financeRefreshTimer);
+  financeRefreshTimer = window.setInterval(loadFinanceSnapshot, 60000);
+}
+
+async function loadFinanceSnapshot() {
+  if (dashboardView.classList.contains("hidden")) return;
+
+  try {
+    const data = await request(buildFinanceUrl());
+    renderFinanceCard(data);
+  } catch {
+    // The main dashboard remains usable if only the lightweight finance refresh fails.
+  }
+}
+
 function selectedPeriodLabel() {
   if (periodSelect.value === "custom" && sinceDate.value && untilDate.value) {
     return `${formatDateOnly(sinceDate.value)} a ${formatDateOnly(untilDate.value)}`;
@@ -344,6 +397,7 @@ function renderExecutiveSummary(data, periodLabel) {
   const ads = data.ads || [];
   const summary = data.summary || {};
   const account = data.account || {};
+  const finance = account.finance || {};
   const currency = account.currency || "BRL";
   const spend = moneyRaw(summary.spendToday);
   const results = Number(summary.resultsToday || 0);
@@ -360,33 +414,47 @@ function renderExecutiveSummary(data, periodLabel) {
   const topSpendCampaign = [...campaigns].sort(
     (a, b) => moneyRaw(b.spendToday) - moneyRaw(a.spendToday)
   )[0];
+  const deliveredAds = ads.filter((ad) => moneyRaw(ad.spendToday) > 0 || ad.impressions > 0);
+  const bestResultAd = [...deliveredAds]
+    .filter((ad) => ad.resultCount > 0)
+    .sort((a, b) => b.resultCount - a.resultCount || moneyRaw(a.spendToday) - moneyRaw(b.spendToday))[0];
+  const topSpendCtr = parsePercent(topSpendCampaign?.ctr);
   const warning = data.warnings?.[0] || "";
   const blockingAdWarning = warning && !ads.length;
 
-  let health = { level: "ok", label: "Saudável", title: "Conta ativa e gerando resultado" };
+  let health = {
+    level: "ok",
+    label: "Rodando",
+    title: "Conta rodando com caminho claro de acompanhamento"
+  };
   if (balanceLow) {
-    health = { level: "danger", label: "Recarregar", title: "Recarregar conta para não parar a mídia" };
+    health = { level: "danger", label: "Recarregar", title: "Ação imediata: recarregar saldo" };
   } else if (data.source?.mode !== "live") {
     health = { level: "warn", label: "Demonstração", title: "Painel pronto para dados reais" };
   } else if (!campaigns.length) {
-    health = { level: "danger", label: "Sem entrega", title: "Nenhuma entrega no período" };
+    health = { level: "danger", label: "Sem entrega", title: "Sem entrega no período selecionado" };
   } else if (spend > 0 && results === 0) {
-    health = { level: "warn", label: "Acompanhar", title: "Há gasto, mas sem resultado" };
-  } else if (zeroResultCampaigns.length > 0) {
-    health = { level: "warn", label: "Atenção", title: "Conta rodando com pontos para olhar" };
+    health = { level: "warn", label: "Revisar", title: "Gasto ativo sem resultado capturado" };
+  } else if (zeroResultCampaigns.length > 0 || (topSpendCtr !== null && topSpendCtr < 1)) {
+    health = { level: "warn", label: "Acompanhar", title: "Conta rodando com ponto de atenção" };
   }
 
   fields.ownerSignalTitle.textContent = health.title;
   fields.ownerSignalText.textContent = buildExecutiveText({
     campaigns,
     ads,
+    averageCost,
+    bestResultAd,
+    bestResultCampaign,
+    finance,
     spend,
     results,
+    topSpendCampaign,
     periodLabel,
     currency,
     zeroResultCampaigns,
     balanceLow,
-    balanceFormatted: account.balance?.formatted,
+    balanceFormatted: finance.primary?.formatted || account.availableBalance?.formatted,
     warning
   });
   setHealth(health.level, health.label);
@@ -409,7 +477,9 @@ function renderExecutiveSummary(data, periodLabel) {
 
   if (balanceLow) {
     fields.ownerAttention.textContent = "Recarga";
-    fields.ownerAttentionHint.textContent = `Financeiro Meta retornou ${account.balance.formatted}. Recarregar antes de escalar campanha.`;
+    fields.ownerAttentionHint.textContent = `Saldo atual: ${
+      finance.primary?.formatted || account.availableBalance?.formatted || "--"
+    }. Recarregar antes de mexer em escala.`;
   } else if (blockingAdWarning) {
     fields.ownerAttention.textContent = "Anúncios";
     fields.ownerAttentionHint.textContent =
@@ -422,9 +492,14 @@ function renderExecutiveSummary(data, periodLabel) {
   } else if (!campaigns.length) {
     fields.ownerAttention.textContent = "Sem campanha";
     fields.ownerAttentionHint.textContent = "Não houve entrega com gasto neste recorte.";
+  } else if (topSpendCtr !== null && topSpendCtr < 1) {
+    fields.ownerAttention.textContent = shortName(topSpendCampaign.name);
+    fields.ownerAttentionHint.textContent = `Maior investimento do período com CTR de ${topSpendCampaign.ctr}. Vale revisar criativo ou público.`;
   } else {
-    fields.ownerAttention.textContent = "Sem alerta crítico";
-    fields.ownerAttentionHint.textContent = "As campanhas com gasto trouxeram resultado no recorte.";
+    fields.ownerAttention.textContent = bestResultAd ? "Escalar com cuidado" : "Sem alerta crítico";
+    fields.ownerAttentionHint.textContent = bestResultAd
+      ? `${shortName(bestResultAd.name)} é o melhor anúncio por resultado. Manter orçamento e acompanhar custo.`
+      : "As campanhas com gasto trouxeram resultado no recorte.";
   }
 
   fields.bestCostValue.textContent = bestCostCampaign?.costPerResult.formatted || "--";
@@ -448,8 +523,13 @@ function renderExecutiveSummary(data, periodLabel) {
 function buildExecutiveText({
   campaigns,
   ads,
+  averageCost,
+  bestResultAd,
+  bestResultCampaign,
+  finance,
   spend,
   results,
+  topSpendCampaign,
   periodLabel,
   currency,
   zeroResultCampaigns,
@@ -460,25 +540,43 @@ function buildExecutiveText({
   const campaignText = plural(campaigns.length, "campanha com entrega", "campanhas com entrega");
   const adText = plural(ads.length, "anúncio analisado", "anúncios analisados");
   const resultText = plural(results, "resultado", "resultados");
+  const averageText =
+    averageCost !== null ? `, custo médio de ${formatMoney(averageCost, currency)}` : "";
   const pieces = [
-    `${periodLabel}: ${campaigns.length} ${campaignText}, ${ads.length} ${adText}, ${formatMoney(
-      spend,
-      currency
-    )} investidos e ${formatNumber(results)} ${resultText}.`
+    `${periodLabel}: ${formatMoney(spend, currency)} em ${campaigns.length} ${campaignText}, ${formatNumber(results)} ${resultText}, ${ads.length} ${adText}${averageText}.`
   ];
 
-  if (zeroResultCampaigns.length) {
-    pieces.push(
-      `${zeroResultCampaigns.length} ${plural(
-        zeroResultCampaigns.length,
-        "campanha gastou",
-        "campanhas gastaram"
-      )} sem resultado.`
-    );
+  if (bestResultCampaign || bestResultAd) {
+    const bestParts = [];
+    if (bestResultCampaign) {
+      bestParts.push(
+        `campanha ${shortName(bestResultCampaign.name)} com ${formatNumber(
+          bestResultCampaign.resultCount
+        )} ${bestResultCampaign.resultLabel.toLowerCase()}`
+      );
+    }
+    if (bestResultAd) bestParts.push(`anúncio ${shortName(bestResultAd.name)}`);
+    pieces.push(`Melhor sinal: ${bestParts.join(" e ")}.`);
   }
 
   if (balanceLow) {
-    pieces.push(`Atenção: financeiro da Meta retornou ${balanceFormatted}; recomenda-se recarregar.`);
+    pieces.push(`Próxima ação: recarregar antes de otimizar, saldo atual ${balanceFormatted}.`);
+  } else if (zeroResultCampaigns.length) {
+    pieces.push(
+      `Próxima ação: revisar ${shortName(zeroResultCampaigns[0].name)}, que gastou ${
+        zeroResultCampaigns[0].spendToday.formatted
+      } sem resultado.`
+    );
+  } else if (topSpendCampaign) {
+    pieces.push(
+      `Próxima ação: manter a verba em observação, maior concentração está em ${shortName(
+        topSpendCampaign.name
+      )}.`
+    );
+  }
+
+  if (!balanceLow && finance?.primary?.formatted && finance?.isActionableBalance) {
+    pieces.push(`Financeiro: ${finance.primary.formatted} disponível agora.`);
   }
 
   if (warning) {
@@ -760,6 +858,7 @@ async function handlePreviewClick(event) {
 }
 
 function showLogin() {
+  window.clearInterval(financeRefreshTimer);
   dashboardView.classList.add("hidden");
   loginView.classList.remove("hidden");
 }
@@ -894,6 +993,12 @@ function readableObjective(value) {
 function moneyRaw(payload, fallback = 0) {
   if (payload && typeof payload.raw === "number") return payload.raw;
   return fallback;
+}
+
+function parsePercent(value) {
+  if (!value) return null;
+  const number = Number(String(value).replace("%", "").replace(",", "."));
+  return Number.isFinite(number) ? number : null;
 }
 
 function shortName(value, limit = 46) {

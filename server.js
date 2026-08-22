@@ -19,7 +19,7 @@ import {
   getConnectorStatus,
   listAdAccounts
 } from "./lib/meta-connector.js";
-import { getAdPreviewData, getDashboardData } from "./lib/meta-dashboard.js";
+import { getAdPreviewData, getDashboardData, getMetaFinanceData } from "./lib/meta-dashboard.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
@@ -136,6 +136,18 @@ async function handleApi(request, response, url) {
   if (url.pathname === "/api/meta/status" && request.method === "GET") {
     const metaAccessToken = getMetaAccessToken(request.headers);
     sendJson(response, 200, getConnectorStatus({ ...request.headers, metaAccessToken }));
+    return;
+  }
+
+  if (url.pathname === "/api/meta/finance" && request.method === "GET") {
+    sendJson(
+      response,
+      200,
+      await getMetaFinanceData({
+        accessToken: getMetaAccessToken(request.headers),
+        adAccountId: process.env.META_AD_ACCOUNT_ID || url.searchParams.get("adAccountId")
+      })
+    );
     return;
   }
 

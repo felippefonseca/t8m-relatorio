@@ -35,8 +35,9 @@ DEMO_MODE=false
 
 Assim, se a credencial falhar, o painel mostra erro em vez de dados ficticios.
 
-Observacao sobre financeiro: os campos `balance`, `spend_cap` e `amount_spent` sao retornados pela API da Meta, mas `balance` pode representar cobranca/faturamento e nao necessariamente o saldo disponivel visto no Gerenciador de Anuncios. Por isso o painel exibe esse bloco como "Financeiro Meta" e nao como saldo real confirmado.
-Quando esse campo vem abaixo do limite de seguranca configurado, o painel mostra "Recarregar conta" para evitar que a midia pare. O limite padrao e R$ 100,00 e pode ser ajustado com:
+Observacao sobre financeiro: os campos `balance`, `spend_cap` e `amount_spent` sao retornados pela API da Meta, mas `balance` pode representar cobranca/faturamento e nao necessariamente a verba disponivel vista no Gerenciador de Anuncios. Por isso o painel prioriza o saldo disponivel estimado quando existe `spend_cap`, calculando `spend_cap - amount_spent`; se a conta for pre-paga e a Meta retornar `balance`, esse valor e usado como saldo direto.
+A rota `/api/meta/finance` atualiza somente o financeiro sem recarregar campanhas/anuncios. O painel usa essa rota automaticamente a cada minuto para manter o card "Saldo atual Meta" mais proximo do momento atual.
+Quando o saldo acionavel vem abaixo do limite de seguranca configurado, o painel mostra alerta de recarga para evitar que a midia pare. O limite padrao e R$ 100,00 e pode ser ajustado com:
 
 ```bash
 FINANCE_ALERT_THRESHOLD=100
@@ -71,6 +72,7 @@ O sistema ja tem rotas prontas para OAuth:
 - `/api/meta/connect`
 - `/api/meta/callback`
 - `/api/meta/accounts`
+- `/api/meta/finance`
 - `/api/meta/disconnect`
 
 Para ativar o botao "Conectar Meta", configure:
