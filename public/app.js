@@ -22,6 +22,8 @@ const connectorStatus = document.querySelector("#connectorStatus");
 const connectorHint = document.querySelector("#connectorHint");
 const accountPicker = document.querySelector("#accountPicker");
 const adAccountSelect = document.querySelector("#adAccountSelect");
+const magneticDock = document.querySelector("#magneticDock");
+const dashboardNavLinks = document.querySelectorAll(".sidebar-link, .dock-item");
 
 const fields = {
   sourceLabel: document.querySelector("#sourceLabel"),
@@ -67,6 +69,7 @@ let selectedAdAccountId = localStorage.getItem("t8m_meta_ad_account_id") || "";
 let dashboardRequestId = 0;
 let dashboardController = null;
 
+initDashboardNavigation();
 boot();
 
 loginForm.addEventListener("submit", async (event) => {
@@ -764,6 +767,67 @@ function showLogin() {
 function showDashboard() {
   loginView.classList.add("hidden");
   dashboardView.classList.remove("hidden");
+}
+
+function initDashboardNavigation() {
+  initMagneticDock();
+
+  const sectionIds = [...dashboardNavLinks]
+    .map((link) => link.getAttribute("href"))
+    .filter((href) => href?.startsWith("#"))
+    .map((href) => href.slice(1));
+  const sections = [...new Set(sectionIds)]
+    .map((id) => document.getElementById(id))
+    .filter(Boolean);
+
+  if (!sections.length || !("IntersectionObserver" in window)) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible?.target?.id) setActiveNavItem(visible.target.id);
+    },
+    { rootMargin: "-22% 0px -58% 0px", threshold: [0.08, 0.18, 0.32] }
+  );
+
+  sections.forEach((section) => observer.observe(section));
+  setActiveNavItem(sections[0].id);
+}
+
+function initMagneticDock() {
+  if (!magneticDock) return;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) return;
+
+  const items = [...magneticDock.querySelectorAll(".dock-item")];
+  const resetItems = () => {
+    items.forEach((item) => {
+      item.style.removeProperty("--dock-scale");
+      item.style.removeProperty("--dock-y");
+    });
+  };
+
+  magneticDock.addEventListener("pointermove", (event) => {
+    items.forEach((item) => {
+      const rect = item.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const distance = Math.hypot(event.clientX - centerX, event.clientY - centerY);
+      const influence = Math.max(0, 1 - distance / 118);
+      item.style.setProperty("--dock-scale", (1 + influence * 0.34).toFixed(3));
+      item.style.setProperty("--dock-y", `${(-influence * 9).toFixed(1)}px`);
+    });
+  });
+  magneticDock.addEventListener("pointerleave", resetItems);
+  magneticDock.addEventListener("blur", resetItems, true);
+}
+
+function setActiveNavItem(sectionId) {
+  dashboardNavLinks.forEach((link) => {
+    link.classList.toggle("is-active", link.getAttribute("href") === `#${sectionId}`);
+  });
 }
 
 async function request(url, options = {}) {

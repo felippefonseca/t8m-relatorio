@@ -60,7 +60,54 @@
       </section>
 
       <section class="dashboard-view hidden" id="dashboardView" aria-label="Painel">
-        <header class="hero">
+        <aside class="dashboard-sidebar" aria-label="Navegação do painel">
+          <div class="sidebar-brand">
+            <img class="sidebar-logo" src="/assets/t8m-logo.png" alt="T8M Energia" />
+            <div>
+              <p class="eyebrow">Dashboard</p>
+              <strong>Meta Ads</strong>
+            </div>
+          </div>
+
+          <nav class="sidebar-nav" aria-label="Seções do painel">
+            <a class="sidebar-link" href="#topSection">
+              <span>01</span>
+              Resumo
+            </a>
+            <a class="sidebar-link" href="#controlsSection">
+              <span>02</span>
+              Período e conector
+            </a>
+            <a class="sidebar-link" href="#metricsSection">
+              <span>03</span>
+              Financeiro
+            </a>
+            <a class="sidebar-link" href="#bestAdsSection">
+              <span>04</span>
+              Melhores anúncios
+            </a>
+            <a class="sidebar-link" href="#campaignsSection">
+              <span>05</span>
+              Campanhas
+            </a>
+            <a class="sidebar-link" href="#adsSection">
+              <span>06</span>
+              Anúncios
+            </a>
+            <a class="sidebar-link" href="#historySection">
+              <span>07</span>
+              Histórico
+            </a>
+          </nav>
+
+          <div class="sidebar-note">
+            <span>Leitura executiva</span>
+            <p>Uma visão rápida para decidir o que precisa de atenção antes da próxima reunião.</p>
+          </div>
+        </aside>
+
+        <div class="dashboard-main">
+        <header class="hero" id="topSection">
           <div class="hero-row">
             <div class="brand-block compact">
               <img class="brand-logo" src="/assets/t8m-logo.png" alt="T8M Energia" />
@@ -87,7 +134,38 @@
           </div>
         </header>
 
-        <section class="control-grid" aria-label="Controles do painel">
+        <nav class="magnetic-dock" id="magneticDock" aria-label="Atalhos do painel">
+          <a class="dock-item" href="#topSection" aria-label="Ir para resumo">
+            <span class="dock-glyph">R</span>
+            <span class="dock-label">Resumo</span>
+          </a>
+          <a class="dock-item" href="#controlsSection" aria-label="Ir para período e conector">
+            <span class="dock-glyph">P</span>
+            <span class="dock-label">Período</span>
+          </a>
+          <a class="dock-item" href="#metricsSection" aria-label="Ir para financeiro">
+            <span class="dock-glyph">F</span>
+            <span class="dock-label">Financeiro</span>
+          </a>
+          <a class="dock-item" href="#bestAdsSection" aria-label="Ir para melhores anúncios">
+            <span class="dock-glyph">★</span>
+            <span class="dock-label">Melhores</span>
+          </a>
+          <a class="dock-item" href="#campaignsSection" aria-label="Ir para campanhas">
+            <span class="dock-glyph">C</span>
+            <span class="dock-label">Campanhas</span>
+          </a>
+          <a class="dock-item" href="#adsSection" aria-label="Ir para anúncios">
+            <span class="dock-glyph">A</span>
+            <span class="dock-label">Anúncios</span>
+          </a>
+          <a class="dock-item" href="#historySection" aria-label="Ir para histórico">
+            <span class="dock-glyph">H</span>
+            <span class="dock-label">Histórico</span>
+          </a>
+        </nav>
+
+        <section class="control-grid" id="controlsSection" aria-label="Controles do painel">
           <article class="control-panel">
             <div class="control-head">
               <span class="sec-n">01</span>
@@ -152,7 +230,7 @@
           </article>
         </section>
 
-        <section class="owner-overview" aria-label="Leitura executiva">
+        <section class="owner-overview" id="ownerSection" aria-label="Leitura executiva">
           <div class="owner-main">
             <div class="section-title">
               <span class="sec-n">03</span>
@@ -185,7 +263,7 @@
           </div>
         </section>
 
-        <section class="metric-grid" aria-label="Resumo da conta">
+        <section class="metric-grid" id="metricsSection" aria-label="Resumo da conta">
           <article class="metric-card balance-card" id="balanceCard">
             <p>Financeiro Meta</p>
             <strong id="balanceValue">--</strong>
@@ -208,7 +286,7 @@
           </article>
         </section>
 
-        <section class="insight-grid" aria-label="Resumo executivo">
+        <section class="insight-grid" id="insightsSection" aria-label="Resumo executivo">
           <article class="insight-card">
             <p>Melhor custo por resultado</p>
             <strong id="bestCostValue">--</strong>
@@ -226,7 +304,7 @@
           </article>
         </section>
 
-        <section class="best-ads-panel" aria-label="Melhores anúncios">
+        <section class="best-ads-panel" id="bestAdsSection" aria-label="Melhores anúncios">
           <div class="section-title">
             <span class="sec-n">04</span>
             <div>
@@ -253,7 +331,7 @@
           </div>
         </section>
 
-        <section class="content-band">
+        <section class="content-band" id="campaignsSection">
           <div class="section-heading">
             <div class="section-title">
               <span class="sec-n">05</span>
@@ -289,7 +367,7 @@
           </div>
         </section>
 
-        <section class="content-band ads-band">
+        <section class="content-band ads-band" id="adsSection">
           <div class="section-heading">
             <div class="section-title">
               <span class="sec-n">06</span>
@@ -325,7 +403,7 @@
           </div>
         </section>
 
-        <section class="content-band history-band">
+        <section class="content-band history-band" id="historySection">
           <div class="section-heading">
             <div class="section-title">
               <span class="sec-n">07</span>
@@ -372,6 +450,7 @@
             </article>
           </div>
         </section>
+        </div>
       </section>
     </main>
 

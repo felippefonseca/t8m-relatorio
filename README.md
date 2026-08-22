@@ -4,6 +4,12 @@ Painel privado para a T8M acompanhar investimento, campanhas com entrega, anunci
 
 Ele usa a identidade dos relatorios antigos: fundo escuro, laranja T8M, cards compactos e tabela de performance.
 
+## Visual do painel
+
+O painel usa uma estrutura inspirada no `dashboard-01` do shadcn: navegacao lateral, blocos executivos, tabelas densas e leitura rapida para o dono acompanhar o que importa sem abrir o Gerenciador de Anuncios.
+
+Como o projeto atual e HTML/JS direto, sem React, Tailwind e `components.json`, os comandos `npx shadcn@latest add dashboard-01` e `npx shadcn@latest add @componentry/magnetic-dock` nao sao aplicados diretamente. O comportamento do dock magnetico foi implementado em JavaScript nativo para manter a publicacao da Vercel e a conexao do Meta funcionando sem migrar a base.
+
 ## Como rodar localmente
 
 1. Copie `.env.example` para `.env`.
