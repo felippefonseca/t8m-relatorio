@@ -241,8 +241,11 @@ function renderFinanceCard(data) {
 
   if (account.balanceLow) {
     balanceCard.classList.add("danger-card");
-    fields.balanceValue.textContent = primary?.formatted || "Recarregar";
-    fields.balanceHint.textContent = `Saldo baixo. Recarregar a conta antes de escalar campanhas. Atualizado em ${formatDateTime(financeUpdatedAt)}.`;
+    fields.balanceValue.textContent = primary?.formatted || "Atenção";
+    fields.balanceHint.textContent =
+      finance.primarySource === "spend_cap"
+        ? `Limite restante baixo. Conferir limite/recarga no Meta antes de escalar. Atualizado em ${formatDateTime(financeUpdatedAt)}.`
+        : `Saldo baixo. Recarregar a conta antes de escalar campanhas. Atualizado em ${formatDateTime(financeUpdatedAt)}.`;
     return;
   }
 
@@ -259,20 +262,21 @@ function renderFinanceCard(data) {
 
 function financeHint(account, finance, updatedAt) {
   const updatedText = updatedAt ? ` Atualizado em ${formatDateTime(updatedAt)}.` : "";
+  const warningText = finance.warning ? `${finance.warning} ` : "";
 
   if (finance.confidence === "estimated") {
-    return `${finance.primaryLabel}: limite ${account.spendCap.formatted} menos gasto acumulado ${account.amountSpent.formatted}.${updatedText}`;
+    return `${warningText}${finance.primaryLabel}: limite ${account.spendCap.formatted} menos gasto acumulado ${account.amountSpent.formatted}.${updatedText}`;
   }
 
   if (finance.confidence === "direct") {
-    return `${finance.primaryLabel}.${updatedText}`;
+    return `${warningText}${finance.primaryLabel}.${updatedText}`;
   }
 
   if (finance.confidence === "billing") {
-    return `${finance.primaryLabel}; esse valor pode representar cobrança/faturamento, não verba disponível.${updatedText}`;
+    return `${warningText}${finance.primaryLabel}; não é verba disponível de pré-pagamento.${updatedText}`;
   }
 
-  return `Aguardando retorno financeiro da Meta.${updatedText}`;
+  return `${warningText}Aguardando retorno financeiro da Meta.${updatedText}`;
 }
 
 function setDashboardLoading(isLoading) {
@@ -421,6 +425,9 @@ function renderExecutiveSummary(data, periodLabel) {
   const topSpendCtr = parsePercent(topSpendCampaign?.ctr);
   const warning = data.warnings?.[0] || "";
   const blockingAdWarning = warning && !ads.length;
+  const hasDirectBalance =
+    finance.primarySource === "total_prepay_balance" ||
+    finance.primarySource === "prepay_account_balance";
 
   let health = {
     level: "ok",
@@ -428,7 +435,9 @@ function renderExecutiveSummary(data, periodLabel) {
     title: "Conta rodando com caminho claro de acompanhamento"
   };
   if (balanceLow) {
-    health = { level: "danger", label: "Recarregar", title: "Ação imediata: recarregar saldo" };
+    health = hasDirectBalance
+      ? { level: "danger", label: "Recarregar", title: "Ação imediata: recarregar saldo" }
+      : { level: "danger", label: "Financeiro", title: "Ação imediata: conferir limite no Meta" };
   } else if (data.source?.mode !== "live") {
     health = { level: "warn", label: "Demonstração", title: "Painel pronto para dados reais" };
   } else if (!campaigns.length) {
@@ -455,6 +464,7 @@ function renderExecutiveSummary(data, periodLabel) {
     zeroResultCampaigns,
     balanceLow,
     balanceFormatted: finance.primary?.formatted || account.availableBalance?.formatted,
+    hasDirectBalance,
     warning
   });
   setHealth(health.level, health.label);
@@ -476,10 +486,10 @@ function renderExecutiveSummary(data, periodLabel) {
   }
 
   if (balanceLow) {
-    fields.ownerAttention.textContent = "Recarga";
+    fields.ownerAttention.textContent = hasDirectBalance ? "Recarga" : "Limite";
     fields.ownerAttentionHint.textContent = `Saldo atual: ${
       finance.primary?.formatted || account.availableBalance?.formatted || "--"
-    }. Recarregar antes de mexer em escala.`;
+    }. ${hasDirectBalance ? "Recarregar" : "Conferir limite ou recarga no Meta"} antes de mexer em escala.`;
   } else if (blockingAdWarning) {
     fields.ownerAttention.textContent = "Anúncios";
     fields.ownerAttentionHint.textContent =
@@ -535,6 +545,7 @@ function buildExecutiveText({
   zeroResultCampaigns,
   balanceLow,
   balanceFormatted,
+  hasDirectBalance,
   warning
 }) {
   const campaignText = plural(campaigns.length, "campanha com entrega", "campanhas com entrega");
@@ -560,7 +571,11 @@ function buildExecutiveText({
   }
 
   if (balanceLow) {
-    pieces.push(`Próxima ação: recarregar antes de otimizar, saldo atual ${balanceFormatted}.`);
+    pieces.push(
+      hasDirectBalance
+        ? `Próxima ação: recarregar antes de otimizar, saldo atual ${balanceFormatted}.`
+        : `Próxima ação: conferir limite ou recarga no Meta antes de otimizar, valor atual ${balanceFormatted}.`
+    );
   } else if (zeroResultCampaigns.length) {
     pieces.push(
       `Próxima ação: revisar ${shortName(zeroResultCampaigns[0].name)}, que gastou ${

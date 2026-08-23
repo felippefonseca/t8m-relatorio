@@ -35,7 +35,7 @@ DEMO_MODE=false
 
 Assim, se a credencial falhar, o painel mostra erro em vez de dados ficticios.
 
-Observacao sobre financeiro: os campos `balance`, `spend_cap` e `amount_spent` sao retornados pela API da Meta, mas `balance` pode representar cobranca/faturamento e nao necessariamente a verba disponivel vista no Gerenciador de Anuncios. Por isso o painel prioriza o saldo disponivel estimado quando existe `spend_cap`, calculando `spend_cap - amount_spent`; se a conta for pre-paga e a Meta retornar `balance`, esse valor e usado como saldo direto.
+Observacao sobre financeiro: os campos `balance`, `spend_cap` e `amount_spent` sao retornados pela API da Meta, mas `balance` pode representar cobranca/faturamento e nao necessariamente a verba disponivel vista no Gerenciador de Anuncios. Por isso o painel prioriza `total_prepay_balance` e `prepay_account_balance` quando a Meta libera esses campos de conta pre-paga. Se eles nao vierem, o painel mostra limite restante (`spend_cap - amount_spent`) como estimativa, sem chamar isso de saldo real.
 A rota `/api/meta/finance` atualiza somente o financeiro sem recarregar campanhas/anuncios. O painel usa essa rota automaticamente a cada minuto para manter o card "Saldo atual Meta" mais proximo do momento atual.
 Quando o saldo acionavel vem abaixo do limite de seguranca configurado, o painel mostra alerta de recarga para evitar que a midia pare. O limite padrao e R$ 100,00 e pode ser ajustado com:
 
