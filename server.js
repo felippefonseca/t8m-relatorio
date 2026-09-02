@@ -78,13 +78,15 @@ async function handleApi(request, response, url) {
   if (url.pathname === "/api/login" && request.method === "POST") {
     const body = await readRequestJson(request);
     if (!verifyCredentials(body)) {
-      sendJson(response, 401, { message: "Usuario ou senha invalidos." });
+      sendJson(response, 401, {
+        message: "Usuario ou senha invalidos. Confira o acesso cadastrado no painel."
+      });
       return;
     }
 
     response.setHeader(
       "Set-Cookie",
-      createSessionCookie(process.env.CLIENT_USERNAME || "t8m")
+      createSessionCookie(String(body.username || process.env.CLIENT_USERNAME || "t8m").trim())
     );
     sendJson(response, 200, { authenticated: true });
     return;

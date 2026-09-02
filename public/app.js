@@ -51,6 +51,8 @@ const fields = {
   ownerBestCampaignHint: document.querySelector("#ownerBestCampaignHint"),
   ownerAttention: document.querySelector("#ownerAttention"),
   ownerAttentionHint: document.querySelector("#ownerAttentionHint"),
+  ownerEventMix: document.querySelector("#ownerEventMix"),
+  ownerEventMixHint: document.querySelector("#ownerEventMixHint"),
   bestCostValue: document.querySelector("#bestCostValue"),
   bestCostHint: document.querySelector("#bestCostHint"),
   zeroResultValue: document.querySelector("#zeroResultValue"),
@@ -206,9 +208,7 @@ function renderDashboard(data) {
     data.summary.impressionsToday
   )} impressões no período`;
   fields.activeCampaignsValue.textContent = String(data.summary.activeCampaigns);
-  fields.todayResultsValue.textContent = `${formatNumber(
-    data.summary.resultsToday
-  )} resultados no periodo`;
+  fields.todayResultsValue.textContent = summaryResultText(data);
   fields.timezoneValue.textContent = account.timezone;
   fields.periodLabel.textContent = periodLabel;
   fields.campaignPeriodEyebrow.textContent = periodLabel;
@@ -396,6 +396,145 @@ function selectedPeriodLabel() {
   return periodSelect.options[periodSelect.selectedIndex]?.textContent || "Hoje";
 }
 
+function summaryResultText(data) {
+  const total = Number(data.summary?.resultsToday || 0);
+  const noun = summaryResultNoun(data.campaigns || [], total);
+  return `${formatNumber(total)} ${noun} no período`;
+}
+
+function summaryResultNoun(items, total) {
+  const groups = aggregateResultBreakdown(items);
+  const hasContact = groups.some((group) => ["lead", "contact", "message"].includes(group.key));
+  const hasIntent = groups.some((group) => ["checkout", "add_to_cart"].includes(group.key));
+
+  if (hasContact) return total === 1 ? "contato captado" : "contatos captados";
+  if (hasIntent) return total === 1 ? "intenção no site" : "intenções no site";
+
+  return total === 1 ? "resultado" : "resultados";
+}
+
+function eventMixSummary(items) {
+  const groups = aggregateResultBreakdown(items, "eventBreakdown");
+  const directContactGroups = groups.filter((group) =>
+    ["lead", "contact", "message"].includes(group.key)
+  );
+  const siteIntentGroups = groups.filter((group) =>
+    ["checkout", "add_to_cart"].includes(group.key)
+  );
+  const contentGroup = groups.find((group) => group.key === "view_content");
+
+  if (directContactGroups.length) {
+    return {
+      title: directContactGroups.map(formatActionGroup).join(" + "),
+      hint: [
+        "Esses eventos entram como contatos captados, mesmo quando o formulário não dispara Lead.",
+        siteIntentGroups.length ? `Também apareceu: ${siteIntentGroups.map(formatActionGroup).join(" + ")}.` : "",
+        contentGroup ? `${formatActionGroup(contentGroup)} ficam como sinal de tráfego, não como contato.` : ""
+      ]
+        .filter(Boolean)
+        .join(" ")
+    };
+  }
+
+  if (siteIntentGroups.length) {
+    return {
+      title: siteIntentGroups.map(formatActionGroup).join(" + "),
+      hint: [
+        "Sem Lead/Contato retornado; estes eventos indicam intenção forte dentro da LP.",
+        contentGroup ? `${formatActionGroup(contentGroup)} mostram volume na página.` : ""
+      ]
+        .filter(Boolean)
+        .join(" ")
+    };
+  }
+
+  if (contentGroup) {
+    return {
+      title: formatActionGroup(contentGroup),
+      hint: "A Meta retornou visualizações de conteúdo, mas ainda não retornou contato ou intenção forte neste recorte."
+    };
+  }
+
+  return {
+    title: "Sem evento",
+    hint: "A Meta não retornou Lead, Contato, Conversa ou intenção no site neste recorte."
+  };
+}
+
+function aggregateResultBreakdown(items, field = "resultBreakdown") {
+  const totals = new Map();
+  for (const item of items || []) {
+    for (const group of item[field] || item.resultBreakdown || []) {
+      const key = group.key || group.label;
+      const current = totals.get(key) || { key, label: group.label, count: 0 };
+      current.count += Number(group.count || 0);
+      totals.set(key, current);
+    }
+  }
+
+  const order = ["lead", "contact", "message", "checkout", "add_to_cart", "purchase", "link_click"];
+  return [...totals.values()]
+    .filter((group) => group.count > 0)
+    .sort((a, b) => actionOrder(a.key, order) - actionOrder(b.key, order));
+}
+
+function actionOrder(key, order) {
+  const index = order.indexOf(key);
+  return index === -1 ? order.length : index;
+}
+
+function renderResultBreakdown(item) {
+  const text = resultBreakdownText(item);
+  const trail = eventTrailText(item);
+  if (!text && !trail) return "";
+  return [
+    text
+      ? `<div class="result-breakdown" title="${escapeHtml(item.resultHint || "")}">${escapeHtml(
+          text
+        )}</div>`
+      : "",
+    trail ? `<div class="event-trail">${escapeHtml(trail)}</div>` : ""
+  ].join("");
+}
+
+function resultBreakdownText(item, limit = 3) {
+  const groups = item.resultBreakdown || [];
+  if (!groups.length) return "";
+  const visibleGroups = groups.slice(0, limit);
+  const extra = groups.length > visibleGroups.length ? ` +${groups.length - visibleGroups.length}` : "";
+  return `${visibleGroups.map(formatActionGroup).join(" + ")}${extra}`;
+}
+
+function formatActionGroup(group) {
+  const labels = {
+    lead: ["lead de formulário", "leads de formulário"],
+    contact: ["contato", "contatos"],
+    message: ["conversa", "conversas"],
+    purchase: ["compra", "compras"],
+    checkout: ["checkout iniciado", "checkouts iniciados"],
+    add_to_cart: ["adição ao carrinho", "adições ao carrinho"],
+    view_content: ["visualização de conteúdo", "visualizações de conteúdo"],
+    link_click: ["clique no link", "cliques no link"]
+  };
+  const count = Number(group.count || 0);
+  const [singular, pluralValue] = labels[group.key] || [
+    String(group.label || "evento").toLowerCase(),
+    String(group.label || "eventos").toLowerCase()
+  ];
+  return `${formatNumber(count)} ${count === 1 ? singular : pluralValue}`;
+}
+
+function eventTrailText(item) {
+  const resultKeys = new Set((item.resultBreakdown || []).map((group) => group.key));
+  const extraGroups = (item.eventBreakdown || [])
+    .filter((group) => !resultKeys.has(group.key))
+    .filter((group) => group.key !== "link_click")
+    .slice(0, 3);
+
+  if (!extraGroups.length) return "";
+  return `Também: ${extraGroups.map(formatActionGroup).join(" + ")}`;
+}
+
 function renderExecutiveSummary(data, periodLabel) {
   const campaigns = data.campaigns || [];
   const ads = data.ads || [];
@@ -419,6 +558,7 @@ function renderExecutiveSummary(data, periodLabel) {
     (a, b) => moneyRaw(b.spendToday) - moneyRaw(a.spendToday)
   )[0];
   const deliveredAds = ads.filter((ad) => moneyRaw(ad.spendToday) > 0 || ad.impressions > 0);
+  const eventMix = eventMixSummary(campaigns);
   const bestResultAd = [...deliveredAds]
     .filter((ad) => ad.resultCount > 0)
     .sort((a, b) => b.resultCount - a.resultCount || moneyRaw(a.spendToday) - moneyRaw(b.spendToday))[0];
@@ -472,6 +612,8 @@ function renderExecutiveSummary(data, periodLabel) {
     averageCost === null
     ? "Ainda sem custo médio por resultado neste período."
       : `Custo médio: ${formatMoney(averageCost, currency)} por resultado.`;
+  fields.ownerEventMix.textContent = eventMix.title;
+  fields.ownerEventMixHint.textContent = eventMix.hint;
 
   if (bestResultCampaign) {
     fields.ownerBestCampaign.textContent = shortName(bestResultCampaign.name);
@@ -550,7 +692,7 @@ function buildExecutiveText({
 }) {
   const campaignText = plural(campaigns.length, "campanha com entrega", "campanhas com entrega");
   const adText = plural(ads.length, "anúncio analisado", "anúncios analisados");
-  const resultText = plural(results, "resultado", "resultados");
+  const resultText = summaryResultNoun(campaigns, results);
   const averageText =
     averageCost !== null ? `, custo médio de ${formatMoney(averageCost, currency)}` : "";
   const pieces = [
@@ -619,7 +761,9 @@ function renderBestAds(ads) {
     ad: bestResultAd,
     fallbackName: "Sem resultado ainda",
     hint: bestResultAd
-      ? `${formatNumber(bestResultAd.resultCount)} ${bestResultAd.resultLabel.toLowerCase()} | ${bestResultAd.spendToday.formatted}`
+      ? `${formatNumber(bestResultAd.resultCount)} ${bestResultAd.resultLabel.toLowerCase()}${
+          resultBreakdownText(bestResultAd) ? ` (${resultBreakdownText(bestResultAd)})` : ""
+        } | ${bestResultAd.spendToday.formatted}`
       : "Nenhum anúncio trouxe resultado no recorte."
   });
   setBestAdCard({
@@ -677,6 +821,7 @@ function renderCampaignRows(campaigns) {
           <td>
             <strong>${formatNumber(campaign.resultCount)}</strong>
             <div class="subtle">${escapeHtml(campaign.resultLabel)}</div>
+            ${renderResultBreakdown(campaign)}
           </td>
           <td>${campaign.spendToday.formatted}</td>
           <td>${campaign.costPerResult.formatted}</td>
@@ -705,7 +850,10 @@ function renderCampaignCards(campaigns) {
             </div>
             <div>
               <dt>Resultado</dt>
-              <dd>${formatNumber(campaign.resultCount)}</dd>
+              <dd>
+                ${formatNumber(campaign.resultCount)}
+                ${renderResultBreakdown(campaign)}
+              </dd>
             </div>
             <div>
               <dt>Investimento</dt>
@@ -747,6 +895,7 @@ function renderAdRows(ads) {
           <td>
             <strong>${formatNumber(ad.resultCount)}</strong>
             <div class="subtle">${escapeHtml(ad.resultLabel)}</div>
+            ${renderResultBreakdown(ad)}
           </td>
           <td>${ad.spendToday.formatted}</td>
           <td>${ad.costPerResult.formatted}</td>
@@ -785,7 +934,10 @@ function renderAdCards(ads) {
             </div>
             <div>
               <dt>Resultado</dt>
-              <dd>${formatNumber(ad.resultCount)}</dd>
+              <dd>
+                ${formatNumber(ad.resultCount)}
+                ${renderResultBreakdown(ad)}
+              </dd>
             </div>
           </dl>
         </article>

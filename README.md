@@ -113,6 +113,7 @@ Depois publique normalmente. A pasta `public/` vira a interface e `api/` fica re
 - Conta: `name`, `account_status`, `amount_spent`, `balance`, `currency`, `spend_cap`, `timezone_name`.
 - Campanhas: campanhas com `effective_status=ACTIVE`.
 - Periodo selecionado: `spend`, `impressions`, `reach`, `clicks`, `ctr`, `cpc`, `cpm`, `actions`.
+- Resultados: o painel prioriza contatos reais. `lead`, `Contact`/`Contato` e conversas iniciadas entram como "Contatos captados". Quando nao houver contato direto, `InitiateCheckout` e `AddToCart` aparecem como "Intencoes no site". `ViewContent` aparece como sinal de trafego, mas nao e contado como contato.
 - Anuncios: `name`, `effective_status`, `campaign_id`, `campaign`, `creative`, `preview_shareable_link`.
 - Historico de anuncios: a listagem prioriza os insights do periodo, entao anuncios com gasto/entrega aparecem mesmo quando a Meta nao retorna todos os detalhes de criativo.
 - Preview: o sistema usa o link compartilhavel quando a Meta retorna. Quando nao retorna, o painel tenta consultar `/previews` com `MOBILE_FEED_STANDARD` somente no clique do usuario para nao deixar a troca de periodo lenta.

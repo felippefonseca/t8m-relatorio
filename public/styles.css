@@ -982,6 +982,25 @@ tr:last-child td {
   font-size: 0.72rem;
 }
 
+.result-breakdown {
+  max-width: 190px;
+  margin-top: 5px;
+  color: var(--brand-2);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.event-trail {
+  max-width: 220px;
+  margin-top: 4px;
+  color: var(--dim);
+  font-size: 0.66rem;
+  line-height: 1.25;
+  white-space: normal;
+}
+
 .campaign-name .meta {
   display: flex;
   flex-wrap: wrap;
