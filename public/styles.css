@@ -11,6 +11,8 @@
   --brand: #f16422;
   --brand-2: #ff8a4c;
   --ok: #3fd179;
+  --info: #64c7ff;
+  --warn: #ffc65c;
   --danger: #ff6b6b;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
   font-family:
@@ -605,7 +607,216 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
   gap: 14px;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
+}
+
+.outcomes-section {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.08fr) minmax(320px, 0.92fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.outcome-hero-card,
+.outcome-kpi-card,
+.funnel-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.outcome-hero-card {
+  display: grid;
+  min-height: 338px;
+  align-content: space-between;
+  gap: 24px;
+  padding: 24px;
+  background:
+    linear-gradient(150deg, rgba(241, 100, 34, 0.18), rgba(100, 199, 255, 0.055) 58%, rgba(255, 255, 255, 0.018)),
+    var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.outcome-main-number {
+  display: grid;
+  gap: 10px;
+}
+
+.outcome-main-number strong {
+  display: block;
+  color: #ffffff;
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: clamp(4.1rem, 10vw, 7.35rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.86;
+}
+
+.outcome-main-number span {
+  color: var(--brand-2);
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: clamp(1.05rem, 2vw, 1.4rem);
+  font-weight: 700;
+}
+
+.outcome-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.outcome-chip {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0 11px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.outcome-chip.muted {
+  color: var(--muted);
+}
+
+.outcome-hero-card > p {
+  max-width: 560px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.outcome-side {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.outcome-kpi-card {
+  display: grid;
+  min-height: 156px;
+  align-content: space-between;
+  gap: 12px;
+  padding: 17px;
+}
+
+.outcome-kpi-card.cost-card {
+  border-color: rgba(63, 209, 121, 0.24);
+  background:
+    linear-gradient(160deg, rgba(63, 209, 121, 0.09), rgba(255, 255, 255, 0.015)),
+    var(--panel);
+}
+
+.outcome-kpi-card p {
+  margin: 0;
+  color: var(--muted);
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.outcome-kpi-card strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  line-height: 1.05;
+}
+
+.outcome-kpi-card.cost-card strong {
+  color: var(--ok);
+}
+
+.outcome-kpi-card span {
+  color: var(--dim);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.funnel-card {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(220px, 0.33fr) minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0.012)),
+    var(--panel);
+}
+
+.funnel-list {
+  display: grid;
+  gap: 10px;
+}
+
+.funnel-step {
+  display: grid;
+  min-height: 58px;
+  grid-template-columns: minmax(150px, 0.35fr) minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.026);
+}
+
+.funnel-step strong,
+.funnel-step b {
+  display: block;
+  color: var(--ink);
+  font-family: "Space Grotesk", Inter, system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.funnel-step span {
+  display: block;
+  margin-top: 3px;
+  color: var(--dim);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.funnel-step b {
+  min-width: 48px;
+  text-align: right;
+}
+
+.funnel-meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.funnel-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+}
+
+.funnel-step.info .funnel-meter span {
+  background: var(--info);
+}
+
+.funnel-step.warn .funnel-meter span {
+  background: var(--warn);
+}
+
+.funnel-step.brand {
+  border-color: rgba(241, 100, 34, 0.24);
+  background: rgba(241, 100, 34, 0.06);
+}
+
+.funnel-step.muted .funnel-meter span {
+  background: #8a8a8f;
 }
 
 .owner-main,
@@ -1162,6 +1373,14 @@ tr:last-child td {
     grid-template-columns: 1fr;
   }
 
+  .outcomes-section {
+    grid-template-columns: 1fr;
+  }
+
+  .funnel-card {
+    grid-template-columns: 1fr;
+  }
+
   .owner-overview,
   .history-grid {
     grid-template-columns: 1fr;
@@ -1183,14 +1402,25 @@ tr:last-child td {
 
   .magnetic-dock {
     width: min(440px, calc(100% - 24px));
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 5px;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+  }
+
+  .magnetic-dock::-webkit-scrollbar {
+    display: none;
   }
 
   .dock-item {
     width: 38px;
     height: 38px;
     flex: 0 0 38px;
+  }
+
+  .dock-label {
+    display: none;
   }
 
   .hero-row,
@@ -1219,6 +1449,33 @@ tr:last-child td {
 
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .outcome-hero-card {
+    min-height: 300px;
+    padding: 20px;
+  }
+
+  .outcome-main-number strong {
+    font-size: clamp(3.6rem, 22vw, 5.4rem);
+  }
+
+  .outcome-side {
+    grid-template-columns: 1fr;
+  }
+
+  .outcome-kpi-card {
+    min-height: 126px;
+  }
+
+  .funnel-step {
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+  }
+
+  .funnel-meter {
+    grid-column: 1 / -1;
+    order: 3;
   }
 
   .period-controls,

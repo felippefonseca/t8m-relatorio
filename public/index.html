@@ -78,24 +78,32 @@
               <span>02</span>
               Período e conector
             </a>
-            <a class="sidebar-link" href="#metricsSection">
+            <a class="sidebar-link" href="#outcomesSection">
               <span>03</span>
+              Leads e contatos
+            </a>
+            <a class="sidebar-link" href="#ownerSection">
+              <span>04</span>
+              Leitura
+            </a>
+            <a class="sidebar-link" href="#metricsSection">
+              <span>05</span>
               Financeiro
             </a>
             <a class="sidebar-link" href="#bestAdsSection">
-              <span>04</span>
-              Melhores anúncios
+              <span>06</span>
+              Destaques
             </a>
             <a class="sidebar-link" href="#campaignsSection">
-              <span>05</span>
+              <span>07</span>
               Campanhas
             </a>
             <a class="sidebar-link" href="#adsSection">
-              <span>06</span>
+              <span>08</span>
               Anúncios
             </a>
             <a class="sidebar-link" href="#historySection">
-              <span>07</span>
+              <span>09</span>
               Histórico
             </a>
           </nav>
@@ -142,6 +150,14 @@
           <a class="dock-item" href="#controlsSection" aria-label="Ir para período e conector">
             <span class="dock-glyph">P</span>
             <span class="dock-label">Período</span>
+          </a>
+          <a class="dock-item" href="#outcomesSection" aria-label="Ir para leads e contatos">
+            <span class="dock-glyph">L</span>
+            <span class="dock-label">Leads</span>
+          </a>
+          <a class="dock-item" href="#ownerSection" aria-label="Ir para leitura do dono">
+            <span class="dock-glyph">D</span>
+            <span class="dock-label">Leitura</span>
           </a>
           <a class="dock-item" href="#metricsSection" aria-label="Ir para financeiro">
             <span class="dock-glyph">F</span>
@@ -230,10 +246,64 @@
           </article>
         </section>
 
+        <section class="outcomes-section" id="outcomesSection" aria-label="Leads e contatos">
+          <article class="outcome-hero-card">
+            <div class="section-title">
+              <span class="sec-n">03</span>
+              <div>
+                <p class="eyebrow" id="outcomePeriodEyebrow">Hoje</p>
+                <h2>Leads e contatos</h2>
+              </div>
+            </div>
+            <div class="outcome-main-number">
+              <strong id="primaryResultsValue">--</strong>
+              <span id="primaryResultsLabel">Contatos captados no período</span>
+            </div>
+            <div class="outcome-breakdown" id="primaryResultsBreakdown"></div>
+            <p id="primaryResultsHint">
+              O painel soma Lead, Contato e Conversa quando esses eventos são retornados pela Meta.
+            </p>
+          </article>
+
+          <div class="outcome-side">
+            <article class="outcome-kpi-card cost-card">
+              <p id="costPerContactTitle">Custo por contato</p>
+              <strong id="costPerContactValue">--</strong>
+              <span id="costPerContactHint">Aguardando eventos de contato</span>
+            </article>
+            <article class="outcome-kpi-card">
+              <p>Investimento</p>
+              <strong id="outcomeSpendValue">--</strong>
+              <span id="outcomeSpendHint">Valor gasto no período</span>
+            </article>
+            <article class="outcome-kpi-card">
+              <p>Intenções na LP</p>
+              <strong id="intentValue">--</strong>
+              <span id="intentHint">Checkout e carrinho quando retornados</span>
+            </article>
+            <article class="outcome-kpi-card">
+              <p>Conteúdo visto</p>
+              <strong id="lpViewsValue">--</strong>
+              <span id="lpViewsHint">Visualizações de conteúdo no site</span>
+            </article>
+          </div>
+
+          <article class="funnel-card">
+            <div class="section-title">
+              <span class="sec-n">LP</span>
+              <div>
+                <p class="eyebrow">Jornada</p>
+                <h2>Funil da página</h2>
+              </div>
+            </div>
+            <div class="funnel-list" id="eventFunnelList"></div>
+          </article>
+        </section>
+
         <section class="owner-overview" id="ownerSection" aria-label="Leitura executiva">
           <div class="owner-main">
             <div class="section-title">
-              <span class="sec-n">03</span>
+              <span class="sec-n">04</span>
               <div>
                 <p class="eyebrow">Leitura do dono</p>
                 <h2 id="ownerSignalTitle">Carregando visão</h2>
@@ -293,12 +363,12 @@
 
         <section class="insight-grid" id="insightsSection" aria-label="Resumo executivo">
           <article class="insight-card">
-            <p>Melhor custo por resultado</p>
+            <p>Melhor custo por contato/ação</p>
             <strong id="bestCostValue">--</strong>
             <span id="bestCostHint">Aguardando dados</span>
           </article>
           <article class="insight-card">
-            <p>Campanhas sem resultado</p>
+            <p>Campanhas sem contato/ação</p>
             <strong id="zeroResultValue">--</strong>
             <span id="zeroResultHint">Aguardando dados</span>
           </article>
@@ -311,7 +381,7 @@
 
         <section class="best-ads-panel" id="bestAdsSection" aria-label="Melhores anúncios">
           <div class="section-title">
-            <span class="sec-n">04</span>
+            <span class="sec-n">06</span>
             <div>
               <p class="eyebrow">Melhores anúncios</p>
               <h2>Destaques do período</h2>
@@ -319,7 +389,7 @@
           </div>
           <div class="best-ads-grid">
             <article class="best-ad-card">
-              <p>Mais resultado</p>
+              <p>Mais contatos/ações</p>
               <strong id="bestAdResultName">--</strong>
               <span id="bestAdResultHint">Aguardando dados</span>
             </article>
@@ -339,7 +409,7 @@
         <section class="content-band" id="campaignsSection">
           <div class="section-heading">
             <div class="section-title">
-              <span class="sec-n">05</span>
+              <span class="sec-n">07</span>
               <div>
                 <p class="eyebrow" id="campaignPeriodEyebrow">Hoje</p>
                 <h2>Campanhas com entrega</h2>
@@ -354,9 +424,9 @@
                 <tr>
                   <th>Campanha</th>
                   <th>Objetivo</th>
-                  <th>Resultado</th>
+                  <th>Contatos/Ações</th>
                   <th>Invest.</th>
-                  <th>CPR</th>
+                  <th>Custo</th>
                   <th>Alcance</th>
                   <th>Impressões</th>
                   <th>CTR</th>
@@ -375,7 +445,7 @@
         <section class="content-band ads-band" id="adsSection">
           <div class="section-heading">
             <div class="section-title">
-              <span class="sec-n">06</span>
+              <span class="sec-n">08</span>
               <div>
                 <p class="eyebrow" id="adsPeriodEyebrow">Hoje</p>
                 <h2>Todos os anúncios</h2>
@@ -392,9 +462,9 @@
                   <th>Anúncio</th>
                   <th>Campanha</th>
                   <th>Objetivo</th>
-                  <th>Resultado</th>
+                  <th>Contatos/Ações</th>
                   <th>Invest.</th>
-                  <th>CPR</th>
+                  <th>Custo</th>
                   <th>CTR</th>
                 </tr>
               </thead>
@@ -411,7 +481,7 @@
         <section class="content-band history-band" id="historySection">
           <div class="section-heading">
             <div class="section-title">
-              <span class="sec-n">07</span>
+              <span class="sec-n">09</span>
               <div>
                 <p class="eyebrow">Histórico salvo</p>
                 <h2>Relatórios anteriores</h2>

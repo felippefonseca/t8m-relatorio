@@ -41,6 +41,21 @@ const fields = {
   todayResultsValue: document.querySelector("#todayResultsValue"),
   timezoneValue: document.querySelector("#timezoneValue"),
   periodLabel: document.querySelector("#periodLabel"),
+  outcomePeriodEyebrow: document.querySelector("#outcomePeriodEyebrow"),
+  primaryResultsValue: document.querySelector("#primaryResultsValue"),
+  primaryResultsLabel: document.querySelector("#primaryResultsLabel"),
+  primaryResultsBreakdown: document.querySelector("#primaryResultsBreakdown"),
+  primaryResultsHint: document.querySelector("#primaryResultsHint"),
+  costPerContactTitle: document.querySelector("#costPerContactTitle"),
+  costPerContactValue: document.querySelector("#costPerContactValue"),
+  costPerContactHint: document.querySelector("#costPerContactHint"),
+  outcomeSpendValue: document.querySelector("#outcomeSpendValue"),
+  outcomeSpendHint: document.querySelector("#outcomeSpendHint"),
+  intentValue: document.querySelector("#intentValue"),
+  intentHint: document.querySelector("#intentHint"),
+  lpViewsValue: document.querySelector("#lpViewsValue"),
+  lpViewsHint: document.querySelector("#lpViewsHint"),
+  eventFunnelList: document.querySelector("#eventFunnelList"),
   campaignPeriodEyebrow: document.querySelector("#campaignPeriodEyebrow"),
   adsPeriodEyebrow: document.querySelector("#adsPeriodEyebrow"),
   ownerSignalTitle: document.querySelector("#ownerSignalTitle"),
@@ -211,10 +226,12 @@ function renderDashboard(data) {
   fields.todayResultsValue.textContent = summaryResultText(data);
   fields.timezoneValue.textContent = account.timezone;
   fields.periodLabel.textContent = periodLabel;
+  fields.outcomePeriodEyebrow.textContent = periodLabel;
   fields.campaignPeriodEyebrow.textContent = periodLabel;
   fields.adsPeriodEyebrow.textContent = periodLabel;
   fields.adsCountPill.textContent = `${formatNumber((data.ads || []).length)} anúncios no recorte`;
 
+  renderOutcomeSnapshot(data, periodLabel);
   renderExecutiveSummary(data, periodLabel);
   renderBestAds(data.ads || []);
   renderCampaignRows(data.campaigns);
@@ -394,6 +411,175 @@ function selectedPeriodLabel() {
   }
 
   return periodSelect.options[periodSelect.selectedIndex]?.textContent || "Hoje";
+}
+
+function renderOutcomeSnapshot(data, periodLabel) {
+  const snapshot = getOutcomeSnapshot(data);
+  const spend = moneyRaw(data.summary?.spendToday);
+  const currency = data.account?.currency || "BRL";
+
+  fields.primaryResultsValue.textContent = formatNumber(snapshot.primaryCount);
+  fields.primaryResultsLabel.textContent = snapshot.primaryLabel;
+  fields.primaryResultsBreakdown.innerHTML = renderOutcomeChips(snapshot.primaryBreakdown);
+  fields.primaryResultsHint.textContent = snapshot.primaryHint;
+  fields.costPerContactTitle.textContent = snapshot.costTitle;
+  fields.costPerContactValue.textContent =
+    snapshot.primaryCount > 0 ? formatMoney(spend / snapshot.primaryCount, currency) : "--";
+  fields.costPerContactHint.textContent =
+    snapshot.primaryCount > 0
+      ? `por ${snapshot.primaryUnit} no período selecionado`
+      : "Aguardando Lead, Contato ou Conversa da Meta.";
+  fields.outcomeSpendValue.textContent = data.summary?.spendToday?.formatted || "--";
+  fields.outcomeSpendHint.textContent = `${formatNumber(
+    data.summary?.impressionsToday
+  )} impressões no período.`;
+  fields.intentValue.textContent = formatNumber(snapshot.intentTotal);
+  fields.intentHint.textContent = snapshot.intentHint;
+  fields.lpViewsValue.textContent = snapshot.contentViews
+    ? formatNumber(snapshot.contentViews)
+    : "--";
+  fields.lpViewsHint.textContent = snapshot.contentViews
+    ? "Visualizações de conteúdo retornadas pelo pixel."
+    : "A Meta não retornou ViewContent neste recorte.";
+  fields.eventFunnelList.innerHTML = renderFunnelSteps(snapshot);
+}
+
+function getOutcomeSnapshot(data) {
+  const campaigns = data.campaigns || [];
+  const resultGroups = aggregateResultBreakdown(campaigns);
+  const eventGroups = aggregateResultBreakdown(campaigns, "eventBreakdown");
+  const contactGroups = eventGroups.filter((group) =>
+    ["lead", "contact", "message"].includes(group.key)
+  );
+  const intentGroups = eventGroups.filter((group) =>
+    ["checkout", "add_to_cart"].includes(group.key)
+  );
+  const contactTotal = sumGroups(contactGroups);
+  const intentTotal = sumGroups(intentGroups);
+  const contentViews = groupCount(eventGroups, "view_content");
+  const summaryResults = Number(data.summary?.resultsToday || 0);
+
+  if (contactTotal > 0) {
+    return {
+      primaryCount: contactTotal,
+      primaryLabel: contactTotal === 1 ? "contato captado" : "contatos captados",
+      primaryUnit: "contato captado",
+      costTitle: "Custo por contato",
+      primaryBreakdown: contactGroups,
+      primaryHint:
+        "Este é o número que importa primeiro: soma Lead de formulário, Contato do site e Conversa iniciada quando a Meta retorna esses eventos.",
+      intentTotal,
+      intentHint: intentGroups.length
+        ? `${intentGroups.map(formatActionGroup).join(" + ")} antes do contato.`
+        : "Sem checkout ou carrinho retornado neste recorte.",
+      contentViews,
+      eventGroups,
+      contactTotal,
+      resultGroups
+    };
+  }
+
+  if (intentTotal > 0) {
+    return {
+      primaryCount: intentTotal,
+      primaryLabel: intentTotal === 1 ? "intenção forte na LP" : "intenções fortes na LP",
+      primaryUnit: "intenção forte",
+      costTitle: "Custo por intenção",
+      primaryBreakdown: intentGroups,
+      primaryHint:
+        "Ainda não voltou Lead/Contato, então o painel destaca quem avançou para carrinho ou checkout dentro da página.",
+      intentTotal,
+      intentHint: intentGroups.map(formatActionGroup).join(" + "),
+      contentViews,
+      eventGroups,
+      contactTotal,
+      resultGroups
+    };
+  }
+
+  return {
+    primaryCount: summaryResults,
+    primaryLabel: summaryResultNoun(campaigns, summaryResults),
+    primaryUnit: "resultado",
+    costTitle: "Custo por ação",
+    primaryBreakdown: resultGroups,
+    primaryHint:
+      summaryResults > 0
+        ? "A Meta retornou ações, mas sem detalhar contato direto neste recorte."
+        : "Sem contato, conversa ou intenção forte retornada pela Meta neste período.",
+    intentTotal,
+    intentHint: "Sem checkout ou carrinho retornado neste recorte.",
+    contentViews,
+    eventGroups,
+    contactTotal,
+    resultGroups
+  };
+}
+
+function renderOutcomeChips(groups) {
+  if (!groups.length) return `<span class="outcome-chip muted">Sem eventos de contato</span>`;
+  return groups
+    .map((group) => `<span class="outcome-chip">${escapeHtml(formatActionGroup(group))}</span>`)
+    .join("");
+}
+
+function renderFunnelSteps(snapshot) {
+  const contactBreakdown =
+    snapshot.contactTotal > 0
+      ? snapshot.primaryBreakdown.map(formatActionGroup).join(" + ")
+      : "Sem contato direto";
+  const steps = [
+    {
+      label: "Conteúdo visto",
+      value: snapshot.contentViews,
+      detail: "ViewContent da página",
+      accent: "info"
+    },
+    {
+      label: "Carrinho",
+      value: groupCount(snapshot.eventGroups, "add_to_cart"),
+      detail: "AddToCart no site",
+      accent: "muted"
+    },
+    {
+      label: "Checkout iniciado",
+      value: groupCount(snapshot.eventGroups, "checkout"),
+      detail: "InitiateCheckout no site",
+      accent: "warn"
+    },
+    {
+      label: "Contatos captados",
+      value: snapshot.contactTotal,
+      detail: contactBreakdown,
+      accent: "brand"
+    }
+  ];
+  const maxValue = Math.max(...steps.map((step) => step.value), 1);
+
+  return steps
+    .map(
+      (step) => `
+        <div class="funnel-step ${step.accent}">
+          <div>
+            <strong>${escapeHtml(step.label)}</strong>
+            <span>${escapeHtml(step.detail)}</span>
+          </div>
+          <div class="funnel-meter" aria-hidden="true">
+            <span style="width: ${Math.max((step.value / maxValue) * 100, step.value ? 8 : 0)}%"></span>
+          </div>
+          <b>${formatNumber(step.value)}</b>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function groupCount(groups, key) {
+  return Number(groups.find((group) => group.key === key)?.count || 0);
+}
+
+function sumGroups(groups) {
+  return groups.reduce((sum, group) => sum + Number(group.count || 0), 0);
 }
 
 function summaryResultText(data) {
@@ -583,7 +769,7 @@ function renderExecutiveSummary(data, periodLabel) {
   } else if (!campaigns.length) {
     health = { level: "danger", label: "Sem entrega", title: "Sem entrega no período selecionado" };
   } else if (spend > 0 && results === 0) {
-    health = { level: "warn", label: "Revisar", title: "Gasto ativo sem resultado capturado" };
+    health = { level: "warn", label: "Revisar", title: "Gasto ativo sem contato/ação capturado" };
   } else if (zeroResultCampaigns.length > 0 || (topSpendCtr !== null && topSpendCtr < 1)) {
     health = { level: "warn", label: "Acompanhar", title: "Conta rodando com ponto de atenção" };
   }
@@ -610,8 +796,8 @@ function renderExecutiveSummary(data, periodLabel) {
   setHealth(health.level, health.label);
   fields.ownerSpendPace.textContent =
     averageCost === null
-    ? "Ainda sem custo médio por resultado neste período."
-      : `Custo médio: ${formatMoney(averageCost, currency)} por resultado.`;
+    ? "Ainda sem custo médio por contato/ação neste período."
+      : `Custo médio: ${formatMoney(averageCost, currency)} por contato/ação.`;
   fields.ownerEventMix.textContent = eventMix.title;
   fields.ownerEventMixHint.textContent = eventMix.hint;
 
@@ -624,7 +810,7 @@ function renderExecutiveSummary(data, periodLabel) {
     } investidos.`;
   } else {
     fields.ownerBestCampaign.textContent = "Ainda sem destaque";
-    fields.ownerBestCampaignHint.textContent = "Nenhuma campanha trouxe resultado neste recorte.";
+    fields.ownerBestCampaignHint.textContent = "Nenhuma campanha trouxe contato/ação neste recorte.";
   }
 
   if (balanceLow) {
@@ -640,7 +826,7 @@ function renderExecutiveSummary(data, periodLabel) {
     fields.ownerAttention.textContent = shortName(zeroResultCampaigns[0].name);
     fields.ownerAttentionHint.textContent = `Gastou ${
       zeroResultCampaigns[0].spendToday.formatted
-    } sem resultado no período.`;
+    } sem contato/ação no período.`;
   } else if (!campaigns.length) {
     fields.ownerAttention.textContent = "Sem campanha";
     fields.ownerAttentionHint.textContent = "Não houve entrega com gasto neste recorte.";
@@ -650,14 +836,14 @@ function renderExecutiveSummary(data, periodLabel) {
   } else {
     fields.ownerAttention.textContent = bestResultAd ? "Escalar com cuidado" : "Sem alerta crítico";
     fields.ownerAttentionHint.textContent = bestResultAd
-      ? `${shortName(bestResultAd.name)} é o melhor anúncio por resultado. Manter orçamento e acompanhar custo.`
-      : "As campanhas com gasto trouxeram resultado no recorte.";
+      ? `${shortName(bestResultAd.name)} é o melhor anúncio por contato/ação. Manter orçamento e acompanhar custo.`
+      : "As campanhas com gasto trouxeram contato/ação no recorte.";
   }
 
   fields.bestCostValue.textContent = bestCostCampaign?.costPerResult.formatted || "--";
   fields.bestCostHint.textContent = bestCostCampaign
     ? shortName(bestCostCampaign.name)
-    : "Aguardando campanhas com resultado.";
+    : "Aguardando campanhas com contato ou ação.";
   fields.zeroResultValue.textContent = String(zeroResultCampaigns.length);
   fields.zeroResultHint.textContent = zeroResultCampaigns.length
     ? zeroResultCampaigns.length === 1
@@ -665,7 +851,7 @@ function renderExecutiveSummary(data, periodLabel) {
       : `${shortName(zeroResultCampaigns[0].name)} e mais ${
           zeroResultCampaigns.length - 1
         } em atenção.`
-    : "Nenhuma campanha com gasto ficou sem resultado.";
+    : "Nenhuma campanha com gasto ficou sem contato/ação.";
   fields.topSpendValue.textContent = topSpendCampaign?.spendToday.formatted || "--";
   fields.topSpendHint.textContent = topSpendCampaign
     ? shortName(topSpendCampaign.name)
@@ -694,7 +880,9 @@ function buildExecutiveText({
   const adText = plural(ads.length, "anúncio analisado", "anúncios analisados");
   const resultText = summaryResultNoun(campaigns, results);
   const averageText =
-    averageCost !== null ? `, custo médio de ${formatMoney(averageCost, currency)}` : "";
+    averageCost !== null
+      ? `, custo médio de ${formatMoney(averageCost, currency)} por contato/ação`
+      : "";
   const pieces = [
     `${periodLabel}: ${formatMoney(spend, currency)} em ${campaigns.length} ${campaignText}, ${formatNumber(results)} ${resultText}, ${ads.length} ${adText}${averageText}.`
   ];
@@ -722,7 +910,7 @@ function buildExecutiveText({
     pieces.push(
       `Próxima ação: revisar ${shortName(zeroResultCampaigns[0].name)}, que gastou ${
         zeroResultCampaigns[0].spendToday.formatted
-      } sem resultado.`
+      } sem contato/ação.`
     );
   } else if (topSpendCampaign) {
     pieces.push(
@@ -759,21 +947,21 @@ function renderBestAds(ads) {
     nameField: fields.bestAdResultName,
     hintField: fields.bestAdResultHint,
     ad: bestResultAd,
-    fallbackName: "Sem resultado ainda",
+    fallbackName: "Sem contato/ação ainda",
     hint: bestResultAd
       ? `${formatNumber(bestResultAd.resultCount)} ${bestResultAd.resultLabel.toLowerCase()}${
           resultBreakdownText(bestResultAd) ? ` (${resultBreakdownText(bestResultAd)})` : ""
         } | ${bestResultAd.spendToday.formatted}`
-      : "Nenhum anúncio trouxe resultado no recorte."
+      : "Nenhum anúncio trouxe contato/ação no recorte."
   });
   setBestAdCard({
     nameField: fields.bestAdCostName,
     hintField: fields.bestAdCostHint,
     ad: bestCostAd,
-    fallbackName: "Sem CPR calculado",
+    fallbackName: "Sem custo calculado",
     hint: bestCostAd
       ? `${bestCostAd.costPerResult.formatted} por ${bestCostAd.resultLabel.toLowerCase()}`
-      : "Aguardando anúncio com resultado."
+      : "Aguardando anúncio com contato ou ação."
   });
   setBestAdCard({
     nameField: fields.topAdSpendName,
@@ -792,6 +980,21 @@ function setBestAdCard({ nameField, hintField, ad, fallbackName, hint }) {
 }
 
 function renderDashboardError(message) {
+  fields.primaryResultsValue.textContent = "--";
+  fields.primaryResultsLabel.textContent = "contatos/ações indisponíveis";
+  fields.primaryResultsBreakdown.innerHTML = `<span class="outcome-chip muted">Meta indisponível</span>`;
+  fields.primaryResultsHint.textContent =
+    message || "Tente atualizar novamente em alguns instantes.";
+  fields.costPerContactTitle.textContent = "Custo por contato";
+  fields.costPerContactValue.textContent = "--";
+  fields.costPerContactHint.textContent = "Custo pausado até a próxima atualização.";
+  fields.outcomeSpendValue.textContent = "--";
+  fields.outcomeSpendHint.textContent = "Investimento indisponível agora.";
+  fields.intentValue.textContent = "--";
+  fields.intentHint.textContent = "Eventos da LP indisponíveis agora.";
+  fields.lpViewsValue.textContent = "--";
+  fields.lpViewsHint.textContent = "Visualizações indisponíveis agora.";
+  fields.eventFunnelList.innerHTML = "";
   fields.ownerSignalTitle.textContent = "Não foi possível atualizar";
   fields.ownerSignalText.textContent = message || "Tente atualizar novamente em alguns instantes.";
   setHealth("danger", "Indisponível");
@@ -849,7 +1052,7 @@ function renderCampaignCards(campaigns) {
               <dd>${escapeHtml(readableObjective(campaign.objective))}</dd>
             </div>
             <div>
-              <dt>Resultado</dt>
+              <dt>Contatos/Ações</dt>
               <dd>
                 ${formatNumber(campaign.resultCount)}
                 ${renderResultBreakdown(campaign)}
@@ -860,7 +1063,7 @@ function renderCampaignCards(campaigns) {
               <dd>${campaign.spendToday.formatted}</dd>
             </div>
             <div>
-              <dt>CPR</dt>
+              <dt>Custo</dt>
               <dd>${campaign.costPerResult.formatted}</dd>
             </div>
             <div>
@@ -933,7 +1136,7 @@ function renderAdCards(ads) {
               <dd>${ad.spendToday.formatted}</dd>
             </div>
             <div>
-              <dt>Resultado</dt>
+              <dt>Contatos/Ações</dt>
               <dd>
                 ${formatNumber(ad.resultCount)}
                 ${renderResultBreakdown(ad)}
