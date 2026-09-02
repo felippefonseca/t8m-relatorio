@@ -1,5 +1,6 @@
 :root {
   color-scheme: dark;
+  --page-gutter: 24px;
   --bg: #0a0a0b;
   --panel: #141417;
   --panel-2: #1a1a1e;
@@ -271,9 +272,9 @@ h2 {
 
 .dashboard-view {
   display: grid;
-  width: min(1180px, calc(100% - 32px));
-  grid-template-columns: 216px minmax(0, 1fr);
-  gap: 18px;
+  width: min(1840px, calc(100vw - (var(--page-gutter) * 2)));
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 20px;
   margin: 0 auto;
   padding: 24px 0 54px;
 }
@@ -722,10 +723,10 @@ h2 {
 
 .outcome-kpi-card strong {
   display: block;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   color: var(--ink);
   font-family: "Space Grotesk", Inter, system-ui, sans-serif;
-  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
   line-height: 1.05;
 }
 
