@@ -8,6 +8,8 @@ const campaignRows = document.querySelector("#campaignRows");
 const mobileCampaigns = document.querySelector("#mobileCampaigns");
 const adRows = document.querySelector("#adRows");
 const mobileAds = document.querySelector("#mobileAds");
+const creativeRanking = document.querySelector("#creativeRanking");
+const creativeRankingEmpty = document.querySelector("#creativeRankingEmpty");
 const balanceCard = document.querySelector("#balanceCard");
 const emptyState = document.querySelector("#emptyState");
 const adsEmptyState = document.querySelector("#adsEmptyState");
@@ -80,6 +82,7 @@ const fields = {
   bestAdCostHint: document.querySelector("#bestAdCostHint"),
   topAdSpendName: document.querySelector("#topAdSpendName"),
   topAdSpendHint: document.querySelector("#topAdSpendHint"),
+  creativeRankingPill: document.querySelector("#creativeRankingPill"),
   adsCountPill: document.querySelector("#adsCountPill")
 };
 
@@ -234,6 +237,7 @@ function renderDashboard(data) {
   renderOutcomeSnapshot(data, periodLabel);
   renderExecutiveSummary(data, periodLabel);
   renderBestAds(data.ads || []);
+  renderCreativeRanking(data.ads || [], account.currency || "BRL");
   renderCampaignRows(data.campaigns);
   renderCampaignCards(data.campaigns);
   renderAdRows(data.ads || []);
@@ -979,6 +983,196 @@ function setBestAdCard({ nameField, hintField, ad, fallbackName, hint }) {
   hintField.textContent = hint;
 }
 
+function renderCreativeRanking(ads, currency) {
+  const creatives = topCreatives(ads, currency);
+  creativeRankingEmpty.classList.toggle("hidden", creatives.length > 0);
+  fields.creativeRankingPill.textContent = creatives.length
+    ? `${creatives.length} melhores criativos no recorte`
+    : "Sem criativos no recorte";
+  creativeRanking.innerHTML = creatives
+    .map((creative, index) => renderCreativeCard(creative, index, currency))
+    .join("");
+}
+
+function topCreatives(ads, currency) {
+  const groups = new Map();
+  const deliveredAds = ads.filter(
+    (ad) => moneyRaw(ad.spendToday) > 0 || ad.impressions > 0 || ad.resultCount > 0
+  );
+
+  for (const ad of deliveredAds) {
+    const key = ad.creativeId || ad.id || `${ad.name}-${ad.campaignId}`;
+    const group =
+      groups.get(key) ||
+      {
+        key,
+        creativeId: ad.creativeId || "",
+        name: ad.headline || ad.name || "Criativo sem nome",
+        adNames: new Set(),
+        campaigns: new Set(),
+        objectives: new Set(),
+        previewAd: ad,
+        spendRaw: 0,
+        resultCount: 0,
+        impressions: 0,
+        reach: 0,
+        clicks: 0,
+        resultBreakdownMap: new Map(),
+        eventBreakdownMap: new Map()
+      };
+
+    group.adNames.add(ad.name || "Anúncio sem nome");
+    group.campaigns.add(ad.campaignName || "Campanha sem nome");
+    group.objectives.add(readableObjective(ad.objective));
+    group.previewAd = betterPreviewAd(group.previewAd, ad);
+    group.spendRaw += moneyRaw(ad.spendToday);
+    group.resultCount += Number(ad.resultCount || 0);
+    group.impressions += Number(ad.impressions || 0);
+    group.reach += Number(ad.reach || 0);
+    group.clicks += Number(ad.clicks || 0);
+    mergeGroupBreakdown(group.resultBreakdownMap, ad.resultBreakdown || []);
+    mergeGroupBreakdown(group.eventBreakdownMap, ad.eventBreakdown || []);
+    groups.set(key, group);
+  }
+
+  return [...groups.values()]
+    .map((group) => {
+      const resultBreakdown = sortedBreakdown(group.resultBreakdownMap);
+      const eventBreakdown = sortedBreakdown(group.eventBreakdownMap);
+      const costRaw = group.resultCount > 0 ? group.spendRaw / group.resultCount : null;
+      return {
+        ...group,
+        adNames: [...group.adNames],
+        campaigns: [...group.campaigns],
+        objectives: [...group.objectives],
+        spendToday: { raw: group.spendRaw, formatted: formatMoney(group.spendRaw, currency) },
+        costRaw,
+        costPerResult: {
+          raw: costRaw,
+          formatted: costRaw !== null ? formatMoney(costRaw, currency) : "--"
+        },
+        ctr:
+          group.impressions > 0
+            ? `${((group.clicks / group.impressions) * 100).toFixed(2)}%`
+            : "--",
+        resultLabel: summaryResultNoun([{ resultBreakdown }], group.resultCount),
+        resultBreakdown,
+        eventBreakdown,
+        resultHint: creativeReason(group, costRaw, currency)
+      };
+    })
+    .sort(compareCreatives)
+    .slice(0, 3);
+}
+
+function renderCreativeCard(creative, index, currency) {
+  const campaignText = listSummary(creative.campaigns, 2);
+  const objectiveText = listSummary(creative.objectives, 2);
+  const resultText = resultBreakdownText(creative) || creative.resultLabel;
+  const eventTrail = eventTrailText(creative);
+
+  return `
+    <article class="creative-card rank-${index + 1}">
+      <div class="creative-rank">#${index + 1}</div>
+      <div class="creative-preview">
+        ${renderAdPreview({ ...creative.previewAd, name: creative.name })}
+      </div>
+      <div class="creative-body">
+        <div class="creative-heading">
+          <p>${escapeHtml(creative.resultHint)}</p>
+          <h3>${escapeHtml(shortName(creative.name, 72))}</h3>
+          <span>${escapeHtml(campaignText)}</span>
+        </div>
+        <div class="creative-stats">
+          <div>
+            <span>Contatos/Ações</span>
+            <strong>${formatNumber(creative.resultCount)}</strong>
+            <small>${escapeHtml(resultText)}</small>
+          </div>
+          <div>
+            <span>Custo</span>
+            <strong>${escapeHtml(creative.costPerResult.formatted)}</strong>
+            <small>por contato/ação</small>
+          </div>
+          <div>
+            <span>Investimento</span>
+            <strong>${escapeHtml(formatMoney(creative.spendRaw, currency))}</strong>
+            <small>${formatNumber(creative.impressions)} impressões</small>
+          </div>
+        </div>
+        <div class="creative-meta">
+          <span>${escapeHtml(objectiveText)}</span>
+          <span>CTR ${escapeHtml(creative.ctr)}</span>
+          ${eventTrail ? `<span>${escapeHtml(eventTrail)}</span>` : ""}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function compareCreatives(a, b) {
+  const aHasResults = a.resultCount > 0 ? 1 : 0;
+  const bHasResults = b.resultCount > 0 ? 1 : 0;
+  if (aHasResults !== bHasResults) return bHasResults - aHasResults;
+  if (a.resultCount !== b.resultCount) return b.resultCount - a.resultCount;
+  if (a.costRaw !== null && b.costRaw !== null && a.costRaw !== b.costRaw) {
+    return a.costRaw - b.costRaw;
+  }
+  if (a.clicks !== b.clicks) return b.clicks - a.clicks;
+  if (a.impressions !== b.impressions) return b.impressions - a.impressions;
+  return b.spendRaw - a.spendRaw;
+}
+
+function betterPreviewAd(current, candidate) {
+  const currentScore = previewScore(current);
+  const candidateScore = previewScore(candidate);
+  if (candidateScore !== currentScore) return candidateScore > currentScore ? candidate : current;
+  const candidateResults = Number(candidate.resultCount || 0);
+  const currentResults = Number(current.resultCount || 0);
+  if (candidateResults !== currentResults) return candidateResults > currentResults ? candidate : current;
+  return moneyRaw(candidate.spendToday) > moneyRaw(current.spendToday) ? candidate : current;
+}
+
+function previewScore(ad = {}) {
+  return [ad.thumbnailUrl, ad.previewUrl, ad.destinationUrl].filter(Boolean).length;
+}
+
+function mergeGroupBreakdown(map, groups) {
+  for (const group of groups || []) {
+    const key = group.key || group.label;
+    const current = map.get(key) || { key, label: group.label, count: 0 };
+    current.count += Number(group.count || 0);
+    map.set(key, current);
+  }
+}
+
+function sortedBreakdown(map) {
+  const order = ["lead", "contact", "message", "checkout", "add_to_cart", "purchase", "link_click"];
+  return [...map.values()]
+    .filter((group) => group.count > 0)
+    .sort((a, b) => actionOrder(a.key, order) - actionOrder(b.key, order));
+}
+
+function creativeReason(group, costRaw, currency = "BRL") {
+  if (group.resultCount > 0 && costRaw !== null) {
+    return `Ranking por ${formatNumber(group.resultCount)} contatos/ações e custo de ${formatMoney(
+      costRaw,
+      currency
+    )}.`;
+  }
+  if (group.clicks > 0) {
+    return `Sem contato captado; ranking por ${formatNumber(group.clicks)} cliques no período.`;
+  }
+  return `Sem contato captado; ranking por entrega e investimento no período.`;
+}
+
+function listSummary(values, limit = 2) {
+  const clean = values.filter(Boolean);
+  const visible = clean.slice(0, limit);
+  const extra = clean.length - visible.length;
+  return `${visible.join(" + ")}${extra > 0 ? ` +${extra}` : ""}` || "--";
+}
+
 function renderDashboardError(message) {
   fields.primaryResultsValue.textContent = "--";
   fields.primaryResultsLabel.textContent = "contatos/ações indisponíveis";
@@ -995,6 +1189,9 @@ function renderDashboardError(message) {
   fields.lpViewsValue.textContent = "--";
   fields.lpViewsHint.textContent = "Visualizações indisponíveis agora.";
   fields.eventFunnelList.innerHTML = "";
+  creativeRanking.innerHTML = "";
+  creativeRankingEmpty.classList.remove("hidden");
+  fields.creativeRankingPill.textContent = "Ranking indisponível";
   fields.ownerSignalTitle.textContent = "Não foi possível atualizar";
   fields.ownerSignalText.textContent = message || "Tente atualizar novamente em alguns instantes.";
   setHealth("danger", "Indisponível");

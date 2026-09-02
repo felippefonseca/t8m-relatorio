@@ -380,13 +380,22 @@
         </section>
 
         <section class="best-ads-panel" id="bestAdsSection" aria-label="Melhores anúncios">
-          <div class="section-title">
-            <span class="sec-n">06</span>
-            <div>
-              <p class="eyebrow">Melhores anúncios</p>
-              <h2>Destaques do período</h2>
+          <div class="section-heading compact-heading">
+            <div class="section-title">
+              <span class="sec-n">06</span>
+              <div>
+                <p class="eyebrow">Criativos</p>
+                <h2>Top 3 do período</h2>
+              </div>
             </div>
+            <span class="pill" id="creativeRankingPill">Ranking por contatos e custo</span>
           </div>
+
+          <div class="creative-ranking" id="creativeRanking"></div>
+          <div class="empty-state hidden" id="creativeRankingEmpty">
+            Nenhum criativo com entrega encontrado neste período.
+          </div>
+
           <div class="best-ads-grid">
             <article class="best-ad-card">
               <p>Mais contatos/ações</p>
